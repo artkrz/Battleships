@@ -24,7 +24,19 @@ A web-based mobile Battleship game for two players with local and online multipl
 2. Take turns firing at your opponent's grid
 3. First player to sink all enemy ships wins!
 
-## Running Locally
+## Running with Docker
+
+```bash
+# Build and start
+docker compose up -d
+
+# Stop
+docker compose down
+```
+
+Then open http://localhost:3000 in your browser.
+
+## Running Locally (without Docker)
 
 ```bash
 # Install dependencies
@@ -50,6 +62,7 @@ Then open http://localhost:3000 in your browser.
 - Socket.io for real-time communication
 - Vanilla JavaScript
 - CSS3 with animations
+- Docker for containerization
 
 ## License
 

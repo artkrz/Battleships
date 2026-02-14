@@ -389,6 +389,14 @@ body {
     opacity: 0.9;
 }
 
+body.large-grid .own-board .grid {
+    --cell-size: min(4vw, 14px);
+}
+
+body.large-grid .own-board .cell {
+    width: min(4vw, 14px);
+    height: min(4vw, 14px);
+}
 .own-board .cell {
     cursor: default;
 }
@@ -497,6 +505,9 @@ body {
     .own-board .grid {
         --cell-size: 5.5vw;
     }
+        body.large-grid .own-board .grid {
+            --cell-size: 4vw;
+        }
 }
 
 @media (min-width: 500px) {
@@ -507,6 +518,9 @@ body {
     .own-board .grid {
         --cell-size: 28px;
     }
+        body.large-grid .own-board .grid {
+            --cell-size: 16px;
+        }
 }
 
 /* Landscape mode */
@@ -523,6 +537,9 @@ body {
     .own-board .grid {
         --cell-size: min(5vh, 22px);
     }
+        body.large-grid .own-board .grid {
+            --cell-size: min(3vh, 14px);
+        }
 }
 
 /* Safe area for notched phones */
@@ -541,6 +558,142 @@ body {
     max-width: 280px;
 }
 
+/* Options Screen */
+#options-screen h2 {
+    color: var(--secondary-color);
+    margin-top: 20px;
+}
+
+.options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    max-width: 350px;
+    padding: 20px;
+}
+
+.option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.option-group label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: left;
+}
+
+.option-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.option-btn {
+    flex: 1;
+    min-width: 80px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.option-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.option-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Turn Timer */
+.turn-timer {
+    font-size: 32px;
+    font-weight: bold;
+    color: var(--secondary-color);
+    margin: 10px 0;
+}
+
+.turn-timer.warning {
+    color: var(--danger-color);
+    animation: timerPulse 0.5s infinite;
+}
+
+@keyframes timerPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Large Grid Mode (20x20) */
+body.large-grid {
+    --cell-size: 4vw;
+}
+
+body.large-grid .grid {
+    max-width: 95vw;
+}
+
+body.large-grid .cell {
+    width: 4vw;
+    height: 4vw;
+    max-width: 16px;
+    max-height: 16px;
+    font-size: 8px;
+}
+
+body.standard-grid {
+    --cell-size: min(9vw, 36px);
+}
+
+@media (max-width: 480px) {
+    body.large-grid .cell {
+        width: 4.5vw;
+        height: 4.5vw;
+        max-width: none;
+        max-height: none;
+    }
+
+    body.standard-grid {
+        --cell-size: 8vw;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    body.large-grid .cell {
+        width: 3.5vw;
+        height: 3.5vw;
+        max-width: 14px;
+        max-height: 14px;
+    }
+}
+
+@media (min-width: 769px) {
+    body.large-grid .cell {
+        width: 18px;
+        height: 18px;
+        max-width: 18px;
+        max-height: 18px;
+    }
+
+    body.standard-grid {
+        --cell-size: 40px;
+    }
+}
 /* Lobby Screen */
 #lobby-screen h2 {
     color: var(--secondary-color);

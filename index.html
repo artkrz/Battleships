@@ -19,6 +19,37 @@
             </div>
         </div>
 
+        <!-- Game Options Screen -->
+        <div id="options-screen" class="screen">
+            <h2>Opcje gry</h2>
+            <div class="options-container">
+                <div class="option-group">
+                    <label>Rozmiar planszy:</label>
+                    <div class="option-buttons">
+                        <button class="option-btn active" data-size="10">10x10 (klasyczna)</button>
+                        <button class="option-btn" data-size="20">20x20 (duża)</button>
+                    </div>
+                </div>
+                <div class="option-group">
+                    <label>Dodatkowy strzał po trafieniu:</label>
+                    <div class="option-buttons">
+                        <button class="option-btn" data-shoot-again="false">Wyłączone</button>
+                        <button class="option-btn active" data-shoot-again="true">Włączone</button>
+                    </div>
+                </div>
+                <div class="option-group">
+                    <label>Limit czasu na turę:</label>
+                    <div class="option-buttons">
+                        <button class="option-btn active" data-timer="0">Brak limitu</button>
+                        <button class="option-btn" data-timer="10">10 sekund</button>
+                        <button class="option-btn" data-timer="30">30 sekund</button>
+                    </div>
+                </div>
+            </div>
+            <button id="start-game-btn" class="btn btn-primary">Rozpocznij grę</button>
+            <button id="back-from-options" class="btn btn-text">← Powrót</button>
+        </div>
+
         <!-- Online Lobby Screen -->
         <div id="lobby-screen" class="screen">
             <h2>Gra Online</h2>
@@ -88,6 +119,9 @@
         <!-- Game Screen -->
         <div id="game-screen" class="screen">
             <h2 id="game-title">Tura gracza 1</h2>
+            <div id="turn-timer" class="turn-timer" style="display: none;">
+                <span id="timer-value">10</span>s
+            </div>
             <div class="game-info">
                 <span id="player1-ships">Ty: <span class="ship-count">5</span> statków</span>
                 <span id="player2-ships">Przeciwnik: <span class="ship-count">5</span> statków</span>

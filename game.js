@@ -1,12 +1,45 @@
 // Game Configuration
-const GRID_SIZE = 10;
-const SHIPS = [
+const SHIPS_STANDARD = [
     { name: 'Lotniskowiec', size: 5, id: 'carrier' },
     { name: 'Pancernik', size: 4, id: 'battleship' },
     { name: 'Krążownik', size: 3, id: 'cruiser' },
     { name: 'Łódź podwodna', size: 3, id: 'submarine' },
     { name: 'Niszczyciel', size: 2, id: 'destroyer' }
 ];
+
+// Double ships for 20x20 mode
+const SHIPS_LARGE = [
+    { name: 'Lotniskowiec 1', size: 5, id: 'carrier1' },
+    { name: 'Lotniskowiec 2', size: 5, id: 'carrier2' },
+    { name: 'Pancernik 1', size: 4, id: 'battleship1' },
+    { name: 'Pancernik 2', size: 4, id: 'battleship2' },
+    { name: 'Krążownik 1', size: 3, id: 'cruiser1' },
+    { name: 'Krążownik 2', size: 3, id: 'cruiser2' },
+    { name: 'Łódź podwodna 1', size: 3, id: 'submarine1' },
+    { name: 'Łódź podwodna 2', size: 3, id: 'submarine2' },
+    { name: 'Niszczyciel 1', size: 2, id: 'destroyer1' },
+    { name: 'Niszczyciel 2', size: 2, id: 'destroyer2' }
+];
+
+// Game options (configurable)
+const gameOptions = {
+    gridSize: 10,
+    shootAgainOnHit: true,
+    turnTimer: 0 // 0 = disabled, otherwise seconds
+};
+
+// Dynamic getters
+function getGridSize() {
+    return gameOptions.gridSize;
+}
+
+function getShips() {
+    return gameOptions.gridSize === 20 ? SHIPS_LARGE : SHIPS_STANDARD;
+}
+
+function getShipCount() {
+    return getShips().length;
+}
 
 // ================== SOUND SYSTEM ==================
 let audioContext = null;
@@ -266,15 +299,18 @@ const gameState = {
     myBoard: null,
     myShips: null,
     enemyBoardState: null, // Track what we know about enemy board
-    roomScore: { host: 0, guest: 0 } // Track wins in the room
+    roomScore: { host: 0, guest: 0 }, // Track wins in the room
+    // Timer
+    turnTimerId: null,
+    turnTimeRemaining: 0
 };
 
 // Initialize boards
 function initializeBoard() {
     const board = [];
-    for (let i = 0; i < GRID_SIZE; i++) {
+    for (let i = 0; i < getGridSize(); i++) {
         board[i] = [];
-        for (let j = 0; j < GRID_SIZE; j++) {
+        for (let j = 0; j < getGridSize(); j++) {
             board[i][j] = { hasShip: false, shipId: null, isHit: false };
         }
     }
@@ -284,6 +320,7 @@ function initializeBoard() {
 // DOM Elements
 const screens = {
     start: document.getElementById('start-screen'),
+    options: document.getElementById('options-screen'),
     lobby: document.getElementById('lobby-screen'),
     waiting: document.getElementById('waiting-screen'),
     setup: document.getElementById('setup-screen'),
@@ -326,6 +363,13 @@ function initializeSocket() {
     gameState.socket.on('room-joined', (data) => {
         gameState.roomCode = data.roomCode;
         gameState.playerRole = 'guest';
+
+        // Apply options from host
+        if (data.options) {
+            gameOptions.gridSize = data.options.gridSize;
+            gameOptions.shootAgainOnHit = data.options.shootAgainOnHit;
+            gameOptions.turnTimer = data.options.turnTimer;
+        }
     });
     
     gameState.socket.on('join-error', (data) => {
@@ -336,7 +380,13 @@ function initializeSocket() {
         // Host sees this - opponent joined
     });
     
-    gameState.socket.on('start-setup', () => {
+    gameState.socket.on('start-setup', (data) => {
+        // Apply options if provided (for guest)
+        if (data && data.options) {
+            gameOptions.gridSize = data.options.gridSize;
+            gameOptions.shootAgainOnHit = data.options.shootAgainOnHit;
+            gameOptions.turnTimer = data.options.turnTimer;
+        }
         startOnlineSetup();
     });
     
@@ -350,6 +400,7 @@ function initializeSocket() {
         startOnlineBattle();
         if (data.isYourTurn) {
             playSound('turn');
+            startTimer();
         }
     });
     
@@ -364,8 +415,15 @@ function initializeSocket() {
     gameState.socket.on('turn-change', (data) => {
         gameState.isMyTurn = data.isYourTurn;
         updateOnlineGameUI();
+
         if (data.isYourTurn) {
-            playSound('turn');
+            if (!data.restartTimer) {
+            // New turn - play sound
+                playSound('turn');
+            }
+            startTimer();
+        } else {
+            stopTimer();
         }
     });
     
@@ -404,6 +462,13 @@ function initializeSocket() {
             gameState.roomScore = data.score;
         }
         
+        // Apply options if provided
+        if (data && data.options) {
+            gameOptions.gridSize = data.options.gridSize;
+            gameOptions.shootAgainOnHit = data.options.shootAgainOnHit;
+            gameOptions.turnTimer = data.options.turnTimer;
+        }
+
         // Reset and start setup
         startOnlineSetup();
     });
@@ -414,8 +479,28 @@ function createGrid(containerId, isSetup = false, isEnemy = false) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';
     
-    for (let row = 0; row < GRID_SIZE; row++) {
-        for (let col = 0; col < GRID_SIZE; col++) {
+    // Set grid size dynamically
+    const gridSize = getGridSize();
+
+    // Update body class and CSS variable for cell size
+    if (gridSize === 20) {
+        document.body.classList.add('large-grid');
+        document.body.classList.remove('standard-grid');
+        // Set cell size directly for 20x20 grid to fit on screen
+        // 20 cells + gaps need to fit in ~95vw
+        document.documentElement.style.setProperty('--cell-size', 'min(4.5vw, 16px)');
+    } else {
+        document.body.classList.add('standard-grid');
+        document.body.classList.remove('large-grid');
+        document.documentElement.style.setProperty('--cell-size', 'min(9vw, 36px)');
+    }
+
+    container.style.gridTemplateColumns = `repeat(${gridSize}, var(--cell-size))`;
+    container.style.gridTemplateRows = `repeat(${gridSize}, var(--cell-size))`;
+    container.dataset.gridSize = gridSize;
+
+    for (let row = 0; row < gridSize; row++) {
+        for (let col = 0; col < gridSize; col++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
             cell.dataset.row = row;
@@ -452,7 +537,7 @@ function createShipButtons() {
     const container = document.getElementById('ships-to-place');
     container.innerHTML = '';
     
-    SHIPS.forEach(ship => {
+    getShips().forEach(ship => {
         const btn = document.createElement('button');
         btn.className = 'ship-btn';
         btn.dataset.shipId = ship.id;
@@ -470,7 +555,7 @@ function selectShip(shipId) {
     
     if (isPlaced) return;
     
-    gameState.selectedShip = SHIPS.find(s => s.id === shipId);
+    gameState.selectedShip = getShips().find(s => s.id === shipId);
     
     document.querySelectorAll('.ship-btn').forEach(btn => {
         btn.classList.remove('selected');
@@ -514,7 +599,7 @@ function showShipPreview(row, col) {
     const isValid = canPlaceShipOnBoard(row, col, gameState.selectedShip.size, gameState.isHorizontal, board);
     
     cells.forEach(([r, c], index) => {
-        if (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE) {
+        if (r >= 0 && r < getGridSize() && c >= 0 && c < getGridSize()) {
             const cell = document.querySelector(`#setup-grid .cell[data-row="${r}"][data-col="${c}"]`);
             if (cell) {
                 cell.classList.add(isValid ? 'preview' : 'preview-invalid');
@@ -560,7 +645,7 @@ function canPlaceShipOnBoard(row, col, size, isHorizontal, board) {
     
     // Check bounds
     for (const [r, c] of cells) {
-        if (r < 0 || r >= GRID_SIZE || c < 0 || c >= GRID_SIZE) {
+        if (r < 0 || r >= getGridSize() || c < 0 || c >= getGridSize()) {
             return false;
         }
     }
@@ -571,7 +656,7 @@ function canPlaceShipOnBoard(row, col, size, isHorizontal, board) {
             for (let dc = -1; dc <= 1; dc++) {
                 const nr = r + dr;
                 const nc = c + dc;
-                if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+                if (nr >= 0 && nr < getGridSize() && nc >= 0 && nc < getGridSize()) {
                     if (board[nr][nc].hasShip) {
                         return false;
                     }
@@ -647,7 +732,7 @@ function handleSetupClick(row, col) {
 
 function checkSetupComplete() {
     const ships = gameState.mode === 'online' ? gameState.myShips : gameState.players[gameState.currentPlayer].ships;
-    const allPlaced = ships.length === SHIPS.length;
+    const allPlaced = ships.length === getShips().length;
     document.getElementById('confirm-setup').disabled = !allPlaced;
 }
 
@@ -682,13 +767,13 @@ function randomPlacement() {
     const ships = gameState.mode === 'online' ? gameState.myShips : gameState.players[gameState.currentPlayer].ships;
     
     // Place each ship randomly
-    for (const shipTemplate of SHIPS) {
+    for (const shipTemplate of getShips()) {
         let placed = false;
         let attempts = 0;
         
         while (!placed && attempts < 100) {
-            const row = Math.floor(Math.random() * GRID_SIZE);
-            const col = Math.floor(Math.random() * GRID_SIZE);
+            const row = Math.floor(Math.random() * getGridSize());
+            const col = Math.floor(Math.random() * getGridSize());
             const isHorizontal = Math.random() > 0.5;
             
             if (canPlaceShipOnBoard(row, col, shipTemplate.size, isHorizontal, board)) {
@@ -720,8 +805,8 @@ function randomPlacement() {
     createGrid('setup-grid', true);
     
     // Show ships on grid with proper ship part classes
-    for (let row = 0; row < GRID_SIZE; row++) {
-        for (let col = 0; col < GRID_SIZE; col++) {
+    for (let row = 0; row < getGridSize(); row++) {
+        for (let col = 0; col < getGridSize(); col++) {
             if (board[row][col].hasShip) {
                 const cell = document.querySelector(`#setup-grid .cell[data-row="${row}"][data-col="${col}"]`);
                 if (cell) {
@@ -803,6 +888,7 @@ function startBattle() {
     gameState.hasAttacked = false;
     document.getElementById('end-turn-btn').style.display = 'block';
     updateGameUI();
+    startTimer();
 }
 
 function updateGameUI() {
@@ -824,8 +910,8 @@ function renderEnemyGrid(enemyPlayer) {
     container.innerHTML = '';
     const board = gameState.players[enemyPlayer].board;
     
-    for (let row = 0; row < GRID_SIZE; row++) {
-        for (let col = 0; col < GRID_SIZE; col++) {
+    for (let row = 0; row < getGridSize(); row++) {
+        for (let col = 0; col < getGridSize(); col++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
             cell.dataset.row = row;
@@ -858,8 +944,8 @@ function renderOwnGrid(playerNum) {
     container.innerHTML = '';
     const board = gameState.players[playerNum].board;
     
-    for (let row = 0; row < GRID_SIZE; row++) {
-        for (let col = 0; col < GRID_SIZE; col++) {
+    for (let row = 0; row < getGridSize(); row++) {
+        for (let col = 0; col < getGridSize(); col++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
             cell.dataset.row = row;
@@ -890,6 +976,111 @@ function renderOwnGrid(playerNum) {
     }
 }
 
+// ================== TIMER SYSTEM ==================
+function startTimer() {
+    stopTimer(); // Clear any existing timer
+
+    if (gameOptions.turnTimer === 0) {
+        updateTimerDisplay(null);
+        return;
+    }
+
+    gameState.turnTimeRemaining = gameOptions.turnTimer;
+    updateTimerDisplay(gameState.turnTimeRemaining);
+
+    gameState.turnTimerId = setInterval(() => {
+        gameState.turnTimeRemaining--;
+        updateTimerDisplay(gameState.turnTimeRemaining);
+
+        if (gameState.turnTimeRemaining <= 0) {
+            stopTimer();
+            handleTimerExpired();
+        }
+    }, 1000);
+}
+
+function stopTimer() {
+    if (gameState.turnTimerId) {
+        clearInterval(gameState.turnTimerId);
+        gameState.turnTimerId = null;
+    }
+}
+
+function updateTimerDisplay(seconds) {
+    const timerElement = document.getElementById('turn-timer');
+    if (!timerElement) return;
+
+    if (seconds === null || gameOptions.turnTimer === 0) {
+        timerElement.style.display = 'none';
+        return;
+    }
+
+    timerElement.style.display = 'block';
+    timerElement.textContent = `⏱️ ${seconds}s`;
+
+    if (seconds <= 5) {
+        timerElement.classList.add('warning');
+    } else {
+        timerElement.classList.remove('warning');
+    }
+}
+
+function handleTimerExpired() {
+    if (gameState.mode === 'online') {
+        // In online mode, perform random attack
+        if (gameState.isMyTurn) {
+            performRandomOnlineAttack();
+        }
+    } else {
+        // Local mode - perform random attack then switch turns
+        if (!gameState.hasAttacked) {
+            performRandomAttack();
+        }
+        endTurn();
+    }
+}
+
+function performRandomOnlineAttack() {
+    // Find all unattacked cells on enemy board
+    const availableCells = [];
+    for (let row = 0; row < getGridSize(); row++) {
+        for (let col = 0; col < getGridSize(); col++) {
+            if (!gameState.enemyBoardState[row][col].isHit) {
+                availableCells.push({ row, col });
+            }
+        }
+    }
+
+    if (availableCells.length > 0) {
+        const randomCell = availableCells[Math.floor(Math.random() * availableCells.length)];
+        // Send random attack to server
+        gameState.socket.emit('attack', { row: randomCell.row, col: randomCell.col });
+    }
+}
+
+function performRandomAttack() {
+    const currentPlayer = gameState.currentPlayer;
+    const enemyPlayer = currentPlayer === 1 ? 2 : 1;
+    const board = gameState.players[enemyPlayer].board;
+
+    // Find all unattacked cells
+    const availableCells = [];
+    for (let row = 0; row < getGridSize(); row++) {
+        for (let col = 0; col < getGridSize(); col++) {
+            if (!board[row][col].isHit) {
+                availableCells.push({ row, col });
+            }
+        }
+    }
+
+    if (availableCells.length > 0) {
+        const randomCell = availableCells[Math.floor(Math.random() * availableCells.length)];
+        // Temporarily allow attack
+        gameState.hasAttacked = false;
+        handleAttack(randomCell.row, randomCell.col);
+    }
+}
+
 function handleAttack(row, col) {
     if (gameState.hasAttacked) return;
     
@@ -901,9 +1092,28 @@ function handleAttack(row, col) {
     
     board[row][col].isHit = true;
     gameState.players[currentPlayer].shots++;
-    gameState.hasAttacked = true;
+
+    const wasHit = board[row][col].hasShip;
+    let shouldAutoEndTurn = false;
+
+    // Allow another shot on hit if option is enabled
+    if (wasHit && gameOptions.shootAgainOnHit) {
+        gameState.hasAttacked = false;
+        // Restart timer for next shot
+        if (gameOptions.turnTimer > 0) {
+            startTimer();
+        }
+    } else {
+        gameState.hasAttacked = true;
+        // Stop timer - player made their move
+        stopTimer();
+        // Mark for auto-end turn if timer mode is on
+        if (gameOptions.turnTimer > 0) {
+            shouldAutoEndTurn = true;
+        }
+    }
     
-    if (board[row][col].hasShip) {
+    if (wasHit) {
         gameState.players[currentPlayer].hits++;
         
         const ship = gameState.players[enemyPlayer].ships.find(s => s.id === board[row][col].shipId);
@@ -934,7 +1144,13 @@ function handleAttack(row, col) {
     updateGameUI();
     
     if (gameState.players[enemyPlayer].shipsRemaining === 0) {
+        stopTimer();
         setTimeout(() => endGame(currentPlayer), 500);
+    } else if (shouldAutoEndTurn) {
+        // Auto-end turn after a brief delay to let player see result
+        setTimeout(() => {
+            endTurn();
+        }, 1500);
     }
 }
 
@@ -946,7 +1162,7 @@ function revealAdjacentCells(ship, enemyPlayer) {
             for (let dc = -1; dc <= 1; dc++) {
                 const nr = r + dr;
                 const nc = c + dc;
-                if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+                if (nr >= 0 && nr < getGridSize() && nc >= 0 && nc < getGridSize()) {
                     if (!board[nr][nc].hasShip && !board[nr][nc].isHit) {
                         board[nr][nc].isHit = true;
                     }
@@ -957,6 +1173,7 @@ function revealAdjacentCells(ship, enemyPlayer) {
 }
 
 function endTurn() {
+    stopTimer();
     const nextPlayer = gameState.currentPlayer === 1 ? 2 : 1;
     gameState.currentPlayer = nextPlayer;
     gameState.hasAttacked = false;
@@ -968,6 +1185,7 @@ function endTurn() {
 }
 
 function endGame(winner) {
+    stopTimer();
     showScreen('gameover');
     
     if (gameState.mode === 'online') {
@@ -1037,7 +1255,11 @@ function showOnlineLobby() {
 }
 
 function createRoom() {
-    gameState.socket.emit('create-room');
+    gameState.socket.emit('create-room', {
+        gridSize: gameOptions.gridSize,
+        shootAgainOnHit: gameOptions.shootAgainOnHit,
+        turnTimer: gameOptions.turnTimer
+    });
 }
 
 function joinRoom() {
@@ -1166,6 +1388,7 @@ function startOnlineSetup() {
     gameState.myBoard = initializeBoard();
     gameState.myShips = [];
     gameState.enemyBoardState = initializeBoard();
+    gameState.enemyShipsRemaining = getShipCount();
     gameState.isHorizontal = true;
     gameState.opponentReady = false;
     gameState.myStats = { shots: 0, hits: 0 };
@@ -1204,8 +1427,8 @@ function updateOnlineGameUI() {
         titleEl.className = 'enemy-turn';
     }
     
-    document.getElementById('player1-ships').innerHTML = `Ty: <span class="ship-count">${5 - countSunkShips(gameState.myShips)}</span> statków`;
-    document.getElementById('player2-ships').innerHTML = `Przeciwnik: <span class="ship-count">${gameState.enemyShipsRemaining || 5}</span> statków`;
+    document.getElementById('player1-ships').innerHTML = `Ty: <span class="ship-count">${getShipCount() - countSunkShips(gameState.myShips)}</span> statków`;
+    document.getElementById('player2-ships').innerHTML = `Przeciwnik: <span class="ship-count">${gameState.enemyShipsRemaining || getShipCount()}</span> statków`;
     
     renderOnlineEnemyGrid();
     renderOnlineOwnGrid();
@@ -1220,9 +1443,25 @@ function renderOnlineEnemyGrid() {
     const container = document.getElementById('enemy-grid');
     container.innerHTML = '';
     const board = gameState.enemyBoardState;
+    const gridSize = getGridSize();
+
+    // Update body class and CSS variable for cell size
+    if (gridSize === 20) {
+        document.body.classList.add('large-grid');
+        document.body.classList.remove('standard-grid');
+        document.documentElement.style.setProperty('--cell-size', 'min(4.5vw, 16px)');
+    } else {
+        document.body.classList.add('standard-grid');
+        document.body.classList.remove('large-grid');
+        document.documentElement.style.setProperty('--cell-size', 'min(9vw, 36px)');
+    }
+
+    // Set grid size dynamically
+    container.style.gridTemplateColumns = `repeat(${gridSize}, var(--cell-size))`;
+    container.style.gridTemplateRows = `repeat(${gridSize}, var(--cell-size))`;
     
-    for (let row = 0; row < GRID_SIZE; row++) {
-        for (let col = 0; col < GRID_SIZE; col++) {
+    for (let row = 0; row < gridSize; row++) {
+        for (let col = 0; col < gridSize; col++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
             cell.dataset.row = row;
@@ -1253,9 +1492,14 @@ function renderOnlineOwnGrid() {
     const container = document.getElementById('own-grid');
     container.innerHTML = '';
     const board = gameState.myBoard;
+    const gridSize = getGridSize();
+
+    // Set grid size dynamically  
+    container.style.gridTemplateColumns = `repeat(${gridSize}, var(--cell-size))`;
+    container.style.gridTemplateRows = `repeat(${gridSize}, var(--cell-size))`;
     
-    for (let row = 0; row < GRID_SIZE; row++) {
-        for (let col = 0; col < GRID_SIZE; col++) {
+    for (let row = 0; row < gridSize; row++) {
+        for (let col = 0; col < gridSize; col++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
             cell.dataset.row = row;
@@ -1319,7 +1563,7 @@ function handleAttackResult(result) {
     gameState.enemyBoardState[row][col].hasShip = isHit;
     
     if (isSunk && sunkShip) {
-        gameState.enemyShipsRemaining = (gameState.enemyShipsRemaining || 5) - 1;
+        gameState.enemyShipsRemaining = (gameState.enemyShipsRemaining || getShipCount()) - 1;
         
         // Mark all ship cells as sunk
         sunkShip.cells.forEach(([r, c]) => {
@@ -1334,7 +1578,7 @@ function handleAttackResult(result) {
                 for (let dc = -1; dc <= 1; dc++) {
                     const nr = r + dr;
                     const nc = c + dc;
-                    if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+                    if (nr >= 0 && nr < getGridSize() && nc >= 0 && nc < getGridSize()) {
                         if (!gameState.enemyBoardState[nr][nc].hasShip) {
                             gameState.enemyBoardState[nr][nc].isHit = true;
                         }
@@ -1386,13 +1630,55 @@ function handleOpponentAttack(result) {
 }
 
 // ================== EVENT LISTENERS ==================
+
+// Options screen listeners
+let pendingGameMode = null;
+
+document.querySelectorAll('.option-btn[data-size]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.option-btn[data-size]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        gameOptions.gridSize = parseInt(btn.dataset.size);
+    });
+});
+
+document.querySelectorAll('.option-btn[data-shoot-again]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.option-btn[data-shoot-again]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        gameOptions.shootAgainOnHit = btn.dataset.shootAgain === 'true';
+    });
+});
+
+document.querySelectorAll('.option-btn[data-timer]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.option-btn[data-timer]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        gameOptions.turnTimer = parseInt(btn.dataset.timer);
+    });
+});
+
+document.getElementById('start-game-btn').addEventListener('click', () => {
+    if (pendingGameMode === 'local') {
+        startLocalGame();
+    } else if (pendingGameMode === 'online') {
+        showOnlineLobby();
+    }
+});
+
+document.getElementById('back-from-options').addEventListener('click', () => {
+    showScreen('start');
+});
+
 document.getElementById('local-btn').addEventListener('click', () => {
     initAudio();
-    startLocalGame();
+    pendingGameMode = 'local';
+    showScreen('options');
 });
 document.getElementById('online-btn').addEventListener('click', () => {
     initAudio();
-    showOnlineLobby();
+    pendingGameMode = 'online';
+    showScreen('options');
 });
 document.getElementById('rotate-btn').addEventListener('click', toggleRotation);
 document.getElementById('random-btn').addEventListener('click', randomPlacement);
@@ -1444,7 +1730,7 @@ function checkUrlForJoin() {
 }
 
 // Initialize
-gameState.enemyShipsRemaining = 5;
+gameState.enemyShipsRemaining = getShipCount();
 showScreen('start');
 
 // Check if user is joining via shared link/QR code

@@ -44,21 +44,32 @@ function generateRoomCode() {
 }
 
 // Create a new room
-function createRoom(hostSocket) {
+function createRoom(hostSocket, options = {}) {
     let roomCode;
     do {
         roomCode = generateRoomCode();
     } while (rooms.has(roomCode));
     
+    // Default game options
+    const gameOptions = {
+        gridSize: options.gridSize || 10,
+        shootAgainOnHit: options.shootAgainOnHit !== undefined ? options.shootAgainOnHit : true,
+        turnTimer: options.turnTimer || 0
+    };
+
+    // Calculate ship count based on grid size
+    const shipCount = gameOptions.gridSize === 20 ? 10 : 5;
+
     const room = {
         code: roomCode,
+        options: gameOptions,
         players: {
             host: {
                 id: hostSocket.id,
                 ready: false,
                 board: null,
                 ships: null,
-                shipsRemaining: 5,
+                shipsRemaining: shipCount,
                 shots: 0,
                 hits: 0
             },
@@ -82,14 +93,14 @@ io.on('connection', (socket) => {
     console.log(`Player connected: ${socket.id}`);
     
     // Create a new room
-    socket.on('create-room', () => {
-        const room = createRoom(socket);
+    socket.on('create-room', (options) => {
+        const room = createRoom(socket, options || {});
         socket.join(room.code);
         socket.roomCode = room.code;
         socket.playerRole = 'host';
         
-        socket.emit('room-created', { roomCode: room.code });
-        console.log(`Room created: ${room.code} by ${socket.id}`);
+        socket.emit('room-created', { roomCode: room.code, options: room.options });
+        console.log(`Room created: ${room.code} by ${socket.id} with options:`, room.options);
     });
     
     // Join an existing room
@@ -112,13 +123,16 @@ io.on('connection', (socket) => {
             return;
         }
         
+        // Calculate ship count based on room options
+        const shipCount = room.options.gridSize === 20 ? 10 : 5;
+
         // Add guest to room
         room.players.guest = {
             id: socket.id,
             ready: false,
             board: null,
             ships: null,
-            shipsRemaining: 5,
+            shipsRemaining: shipCount,
             shots: 0,
             hits: 0
         };
@@ -127,14 +141,14 @@ io.on('connection', (socket) => {
         socket.roomCode = code;
         socket.playerRole = 'guest';
         
-        socket.emit('room-joined', { roomCode: code });
+        socket.emit('room-joined', { roomCode: code, options: room.options });
         
         // Notify host that guest joined
         const hostSocket = room.players.host.id;
         io.to(hostSocket).emit('opponent-joined');
         
         // Both players can now setup their boards
-        io.to(code).emit('start-setup');
+        io.to(code).emit('start-setup', { options: room.options });
         
         console.log(`Player ${socket.id} joined room ${code}`);
     });
@@ -196,6 +210,7 @@ io.on('connection', (socket) => {
         
         const { row, col } = data;
         const targetCell = opponent.board[row][col];
+        const gridSize = room.options.gridSize;
         
         // Check if already hit
         if (targetCell.isHit) {
@@ -237,7 +252,7 @@ io.on('connection', (socket) => {
                             for (let dc = -1; dc <= 1; dc++) {
                                 const nr = r + dr;
                                 const nc = c + dc;
-                                if (nr >= 0 && nr < 10 && nc >= 0 && nc < 10) {
+                                if (nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize) {
                                     opponent.board[nr][nc].isHit = true;
                                 }
                             }
@@ -276,10 +291,18 @@ io.on('connection', (socket) => {
         socket.to(socket.roomCode).emit('opponent-attacked', result);
         
         // Switch turns if game not over
+        // If shootAgainOnHit is enabled and it was a hit, don't switch turns
         if (!room.gameOver) {
-            room.currentTurn = opponentRole;
-            io.to(room.players[playerRole].id).emit('turn-change', { isYourTurn: false });
-            io.to(room.players[opponentRole].id).emit('turn-change', { isYourTurn: true });
+            const keepTurn = room.options.shootAgainOnHit && targetCell.hasShip;
+
+            if (!keepTurn) {
+                room.currentTurn = opponentRole;
+                io.to(room.players[playerRole].id).emit('turn-change', { isYourTurn: false });
+                io.to(room.players[opponentRole].id).emit('turn-change', { isYourTurn: true });
+            } else {
+                // Restart timer for the same player if shoot again on hit
+                io.to(room.players[playerRole].id).emit('turn-change', { isYourTurn: true, restartTimer: true });
+            }
         }
     });
     
@@ -390,6 +413,9 @@ io.on('connection', (socket) => {
             room.gameOver = false;
             room.currentTurn = 'host';
             
+            // Calculate ship count based on room options
+            const shipCount = room.options.gridSize === 20 ? 10 : 5;
+
             // Reset player states
             ['host', 'guest'].forEach(role => {
                 const player = room.players[role];
@@ -397,7 +423,7 @@ io.on('connection', (socket) => {
                     player.ready = false;
                     player.board = null;
                     player.ships = null;
-                    player.shipsRemaining = 5;
+                    player.shipsRemaining = shipCount;
                     player.shots = 0;
                     player.hits = 0;
                     player.wantsRematch = false;
@@ -405,7 +431,7 @@ io.on('connection', (socket) => {
             });
             
             // Notify both players to start setup
-            io.to(socket.roomCode).emit('rematch-start', { score: room.score });
+            io.to(socket.roomCode).emit('rematch-start', { score: room.score, options: room.options });
             console.log(`Rematch started in room ${socket.roomCode}`);
         }
     });
