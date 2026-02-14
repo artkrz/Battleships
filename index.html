@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Statki - Gra dla dwóch graczy</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen active">
+            <h1>🚢 Statki</h1>
+            <p>Gra dla dwóch graczy</p>
+            <div class="mode-buttons">
+                <button id="local-btn" class="btn btn-primary">Gra lokalna</button>
+                <button id="online-btn" class="btn btn-secondary">Gra online</button>
+            </div>
+        </div>
+
+        <!-- Online Lobby Screen -->
+        <div id="lobby-screen" class="screen">
+            <h2>Gra Online</h2>
+            <div class="lobby-options">
+                <button id="create-room-btn" class="btn btn-primary">Utwórz pokój</button>
+                <div class="divider">lub</div>
+                <div class="join-room">
+                    <input type="text" id="room-code-input" placeholder="Kod pokoju" maxlength="6">
+                    <button id="join-room-btn" class="btn btn-primary">Dołącz do pokoju</button>
+                </div>
+            </div>
+            <button id="back-to-menu" class="btn btn-text">← Powrót</button>
+        </div>
+
+        <!-- Waiting Room Screen -->
+        <div id="waiting-screen" class="screen">
+            <h2>Oczekiwanie na gracza</h2>
+            <div class="room-code-display">
+                <p>Kod pokoju:</p>
+                <div id="room-code" class="code"></div>
+                <div class="share-buttons">
+                    <button id="copy-code-btn" class="btn btn-secondary btn-small">📋 Kopiuj kod</button>
+                    <button id="share-btn" class="btn btn-secondary btn-small">📤 Udostępnij</button>
+                </div>
+            </div>
+            <div class="qr-section">
+                <p>Lub zeskanuj kod QR:</p>
+                <img id="qr-code" alt="QR Code">
+            </div>
+            <div class="loader"></div>
+            <p class="waiting-text">Prześlij kod lub link znajomemu...</p>
+            <button id="cancel-room-btn" class="btn btn-text">Anuluj</button>
+        </div>
+
+        <!-- Setup Screen -->
+        <div id="setup-screen" class="screen">
+            <h2 id="setup-title">Gracz 1 - Rozmieść statki</h2>
+            <div class="ship-selector">
+                <p>Wybierz statek:</p>
+                <div id="ships-to-place" class="ships-list"></div>
+                <div class="setup-buttons">
+                    <button id="rotate-btn" class="btn btn-secondary">Obróć (poziomo)</button>
+                    <button id="random-btn" class="btn btn-secondary">🎲 Losowo</button>
+                </div>
+            </div>
+            <div class="grid-container">
+                <div id="setup-grid" class="grid"></div>
+            </div>
+            <button id="confirm-setup" class="btn btn-primary" disabled>Zatwierdź ustawienie</button>
+            <button id="reset-setup" class="btn btn-secondary">Resetuj</button>
+        </div>
+
+        <!-- Transition Screen -->
+        <div id="transition-screen" class="screen">
+            <h2 id="transition-title">Przekaż telefon graczowi 2</h2>
+            <p id="transition-subtitle">Nie podglądaj planszy przeciwnika!</p>
+            <button id="continue-btn" class="btn btn-primary">Gotowy</button>
+        </div>
+
+        <!-- Online Waiting for Opponent Setup -->
+        <div id="online-waiting-screen" class="screen">
+            <h2>Oczekiwanie na przeciwnika</h2>
+            <div class="loader"></div>
+            <p>Przeciwnik rozmieszcza statki...</p>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <h2 id="game-title">Tura gracza 1</h2>
+            <div class="game-info">
+                <span id="player1-ships">Ty: <span class="ship-count">5</span> statków</span>
+                <span id="player2-ships">Przeciwnik: <span class="ship-count">5</span> statków</span>
+            </div>
+            <div class="boards-container">
+                <div class="board-section">
+                    <h3>Plansza przeciwnika</h3>
+                    <div id="enemy-grid" class="grid enemy-grid"></div>
+                </div>
+                <div class="board-section own-board">
+                    <h3>Twoja plansza</h3>
+                    <div id="own-grid" class="grid own-grid"></div>
+                </div>
+            </div>
+            <button id="end-turn-btn" class="btn btn-primary" disabled>Zakończ turę</button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="screen">
+            <h2 id="winner-text">🎉 Gracz 1 wygrywa!</h2>
+            <div id="game-stats"></div>
+            <div class="gameover-buttons">
+                <button id="play-again-btn" class="btn btn-primary">Zagraj ponownie</button>
+                <button id="leave-game-btn" class="btn btn-secondary" style="display: none;">Wyjdź do menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
