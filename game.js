@@ -8,6 +8,7 @@ const SHIPS_STANDARD = [
 ];
 
 // Double ships for 20x20 mode
+// Double ships for 15x15 mode
 const SHIPS_LARGE = [
     { name: 'Lotniskowiec 1', size: 5, id: 'carrier1' },
     { name: 'Lotniskowiec 2', size: 5, id: 'carrier2' },
@@ -34,7 +35,7 @@ function getGridSize() {
 }
 
 function getShips() {
-    return gameOptions.gridSize === 20 ? SHIPS_LARGE : SHIPS_STANDARD;
+    return gameOptions.gridSize === 15 ? SHIPS_LARGE : SHIPS_STANDARD;
 }
 
 function getShipCount() {
@@ -483,12 +484,12 @@ function createGrid(containerId, isSetup = false, isEnemy = false) {
     const gridSize = getGridSize();
 
     // Update body class and CSS variable for cell size
-    if (gridSize === 20) {
+    if (gridSize === 15) {
         document.body.classList.add('large-grid');
         document.body.classList.remove('standard-grid');
-        // Set cell size directly for 20x20 grid to fit on screen
-        // 20 cells + gaps need to fit in ~95vw
-        document.documentElement.style.setProperty('--cell-size', 'min(4.5vw, 16px)');
+        // Set cell size directly for 15x15 grid to fit on screen
+        // 15 cells + gaps need to fit in ~95vw
+        document.documentElement.style.setProperty('--cell-size', 'min(6vw, 24px)');
     } else {
         document.body.classList.add('standard-grid');
         document.body.classList.remove('large-grid');
@@ -909,9 +910,11 @@ function renderEnemyGrid(enemyPlayer) {
     const container = document.getElementById('enemy-grid');
     container.innerHTML = '';
     const board = gameState.players[enemyPlayer].board;
-    
-    for (let row = 0; row < getGridSize(); row++) {
-        for (let col = 0; col < getGridSize(); col++) {
+    const gridSize = getGridSize();
+    container.style.gridTemplateColumns = `repeat(${gridSize}, var(--cell-size))`;
+    container.style.gridTemplateRows = `repeat(${gridSize}, var(--cell-size))`;
+    for (let row = 0; row < gridSize; row++) {
+        for (let col = 0; col < gridSize; col++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
             cell.dataset.row = row;
@@ -943,9 +946,11 @@ function renderOwnGrid(playerNum) {
     const container = document.getElementById('own-grid');
     container.innerHTML = '';
     const board = gameState.players[playerNum].board;
-    
-    for (let row = 0; row < getGridSize(); row++) {
-        for (let col = 0; col < getGridSize(); col++) {
+    const gridSize = getGridSize();
+    container.style.gridTemplateColumns = `repeat(${gridSize}, var(--cell-size))`;
+    container.style.gridTemplateRows = `repeat(${gridSize}, var(--cell-size))`;
+    for (let row = 0; row < gridSize; row++) {
+        for (let col = 0; col < gridSize; col++) {
             const cell = document.createElement('div');
             cell.className = 'cell';
             cell.dataset.row = row;
@@ -1078,6 +1083,9 @@ function performRandomAttack() {
         // Temporarily allow attack
         gameState.hasAttacked = false;
         handleAttack(randomCell.row, randomCell.col);
+    } else {
+        // No moves left, immediately end turn
+        endTurn();
     }
 }
 
@@ -1107,8 +1115,10 @@ function handleAttack(row, col) {
         gameState.hasAttacked = true;
         // Stop timer - player made their move
         stopTimer();
-        // Mark for auto-end turn if timer mode is on
-        if (gameOptions.turnTimer > 0) {
+        // Always auto-end turn after a miss in local mode (no timer needed)
+        if (gameState.mode === 'local') {
+            shouldAutoEndTurn = true;
+        } else if (gameOptions.turnTimer > 0) {
             shouldAutoEndTurn = true;
         }
     }
@@ -1446,10 +1456,10 @@ function renderOnlineEnemyGrid() {
     const gridSize = getGridSize();
 
     // Update body class and CSS variable for cell size
-    if (gridSize === 20) {
+    if (gridSize === 15) {
         document.body.classList.add('large-grid');
         document.body.classList.remove('standard-grid');
-        document.documentElement.style.setProperty('--cell-size', 'min(4.5vw, 16px)');
+        document.documentElement.style.setProperty('--cell-size', 'min(6vw, 24px)');
     } else {
         document.body.classList.add('standard-grid');
         document.body.classList.remove('large-grid');

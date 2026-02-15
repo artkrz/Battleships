@@ -58,7 +58,7 @@ function createRoom(hostSocket, options = {}) {
     };
 
     // Calculate ship count based on grid size
-    const shipCount = gameOptions.gridSize === 20 ? 10 : 5;
+    const shipCount = gameOptions.gridSize === 15 ? 10 : 5;
 
     const room = {
         code: roomCode,
@@ -124,7 +124,7 @@ io.on('connection', (socket) => {
         }
         
         // Calculate ship count based on room options
-        const shipCount = room.options.gridSize === 20 ? 10 : 5;
+        const shipCount = room.options.gridSize === 15 ? 10 : 5;
 
         // Add guest to room
         room.players.guest = {
@@ -414,7 +414,7 @@ io.on('connection', (socket) => {
             room.currentTurn = 'host';
             
             // Calculate ship count based on room options
-            const shipCount = room.options.gridSize === 20 ? 10 : 5;
+            const shipCount = room.options.gridSize === 15 ? 10 : 5;
 
             // Reset player states
             ['host', 'guest'].forEach(role => {

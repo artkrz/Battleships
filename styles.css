@@ -167,8 +167,7 @@ body {
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(10, var(--cell-size));
-    grid-template-rows: repeat(10, var(--cell-size));
+    /* grid-template-columns and rows are set dynamically in JS for any grid size */
     gap: 2px;
     background: rgba(0, 0, 0, 0.3);
     padding: 4px;
@@ -641,7 +640,8 @@ body.large-grid .own-board .cell {
 
 /* Large Grid Mode (20x20) */
 body.large-grid {
-    --cell-size: 4vw;
+    /* Adjusted for 15x15 grid */
+    --cell-size: min(6vw, 24px);
 }
 
 body.large-grid .grid {
@@ -649,11 +649,9 @@ body.large-grid .grid {
 }
 
 body.large-grid .cell {
-    width: 4vw;
-    height: 4vw;
-    max-width: 16px;
-    max-height: 16px;
-    font-size: 8px;
+    width: var(--cell-size);
+    height: var(--cell-size);
+    font-size: 12px;
 }
 
 body.standard-grid {
