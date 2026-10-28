@@ -44,240 +44,64 @@ function getShipCount() {
 
 // ================== SOUND SYSTEM ==================
 let audioContext = null;
+const soundBuffers = new Map();
+let soundBus;
+let soundsMuted = false;
+let combatSoundUntil = 0;
+let pendingTurnChange = null;
 
 function initAudio() {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const limiter = audioContext.createDynamicsCompressor();
+        limiter.threshold.value = -12;
+        limiter.ratio.value = 8;
+        soundBus = audioContext.createGain();
+        soundBus.gain.value = soundsMuted ? 0 : 0.5;
+        soundBus.connect(limiter);
+        limiter.connect(audioContext.destination);
     }
-    // Resume context if suspended (needed for some browsers)
-    if (audioContext.state === 'suspended') {
-        audioContext.resume();
-    }
+    if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
 }
 
-function playSound(type) {
+function loadSound(type) {
+    if (!soundBuffers.has(type)) {
+        soundBuffers.set(type, fetch(`assets/audio/${type}.wav?v=3`)
+            .then(response => {
+                if (!response.ok) throw new Error('Audio unavailable');
+                return response.arrayBuffer();
+            })
+            .then(data => audioContext.decodeAudioData(data))
+            .catch(() => { soundBuffers.delete(type); return null; }));
+    }
+    return soundBuffers.get(type);
+}
+
+async function playSound(type) {
     initAudio();
-    
-    switch(type) {
-        case 'hit':
-            playExplosion();
-            break;
-        case 'miss':
-            playSplash();
-            break;
-        case 'sunk':
-            playSunk();
-            break;
-        case 'turn':
-            playTurnNotification();
-            break;
-        case 'win':
-            playVictory();
-            break;
-        case 'lose':
-            playDefeat();
-            break;
-        case 'place':
-            playPlaceShip();
-            break;
-    }
+    if (soundsMuted) return;
+    const buffer = await loadSound(type);
+    if (!buffer || soundsMuted || audioContext.state !== 'running') return;
+    const source = audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(soundBus);
+    // Let the final sinking impact finish before the quiet end-of-game cue.
+    const when = ['win', 'lose'].includes(type) ? Math.max(audioContext.currentTime, combatSoundUntil) : audioContext.currentTime;
+    source.start(when);
+    if (['hit', 'miss', 'sunk'].includes(type)) combatSoundUntil = when + buffer.duration;
+    source.onended = () => source.disconnect();
 }
 
-function playExplosion() {
-    // Explosion sound - noise burst with decay
-    const duration = 0.3;
-    const time = audioContext.currentTime;
-    
-    // Create noise
-    const bufferSize = audioContext.sampleRate * duration;
-    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-    const data = buffer.getChannelData(0);
-    
-    for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
-    }
-    
-    const noise = audioContext.createBufferSource();
-    noise.buffer = buffer;
-    
-    // Low pass filter for rumble
-    const filter = audioContext.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(1000, time);
-    filter.frequency.exponentialRampToValueAtTime(100, time + duration);
-    
-    const gain = audioContext.createGain();
-    gain.gain.setValueAtTime(0.4, time);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
-    
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(audioContext.destination);
-    
-    noise.start(time);
-    noise.stop(time + duration);
-}
-
-function playSplash() {
-    // Water splash - filtered noise
-    const duration = 0.25;
-    const time = audioContext.currentTime;
-    
-    const bufferSize = audioContext.sampleRate * duration;
-    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-    const data = buffer.getChannelData(0);
-    
-    for (let i = 0; i < bufferSize; i++) {
-        const t = i / audioContext.sampleRate;
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 8);
-    }
-    
-    const noise = audioContext.createBufferSource();
-    noise.buffer = buffer;
-    
-    const filter = audioContext.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.value = 2000;
-    filter.Q.value = 1;
-    
-    const gain = audioContext.createGain();
-    gain.gain.setValueAtTime(0.2, time);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
-    
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(audioContext.destination);
-    
-    noise.start(time);
-    noise.stop(time + duration);
-}
-
-function playSunk() {
-    // Ship sinking - descending tone with rumble
-    const time = audioContext.currentTime;
-    
-    // Main descending tone
-    const osc = audioContext.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(300, time);
-    osc.frequency.exponentialRampToValueAtTime(50, time + 0.8);
-    
-    const gain = audioContext.createGain();
-    gain.gain.setValueAtTime(0.3, time);
-    gain.gain.linearRampToValueAtTime(0, time + 0.8);
-    
-    const filter = audioContext.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 500;
-    
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(audioContext.destination);
-    
-    osc.start(time);
-    osc.stop(time + 0.8);
-    
-    // Add explosion
-    setTimeout(() => playExplosion(), 100);
-}
-
-function playTurnNotification() {
-    // Pleasant notification chime
-    const time = audioContext.currentTime;
-    
-    const frequencies = [523.25, 659.25, 783.99]; // C5, E5, G5 chord
-    
-    frequencies.forEach((freq, i) => {
-        const osc = audioContext.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        
-        const gain = audioContext.createGain();
-        gain.gain.setValueAtTime(0, time + i * 0.05);
-        gain.gain.linearRampToValueAtTime(0.15, time + i * 0.05 + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
-        
-        osc.connect(gain);
-        gain.connect(audioContext.destination);
-        
-        osc.start(time + i * 0.05);
-        osc.stop(time + 0.5);
-    });
-}
-
-function playVictory() {
-    // Victory fanfare
-    const time = audioContext.currentTime;
-    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-    
-    notes.forEach((freq, i) => {
-        const osc = audioContext.createOscillator();
-        osc.type = 'square';
-        osc.frequency.value = freq;
-        
-        const gain = audioContext.createGain();
-        const startTime = time + i * 0.15;
-        gain.gain.setValueAtTime(0, startTime);
-        gain.gain.linearRampToValueAtTime(0.15, startTime + 0.05);
-        gain.gain.setValueAtTime(0.15, startTime + 0.1);
-        gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
-        
-        const filter = audioContext.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 2000;
-        
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(audioContext.destination);
-        
-        osc.start(startTime);
-        osc.stop(startTime + 0.4);
-    });
-}
-
-function playDefeat() {
-    // Sad descending tones
-    const time = audioContext.currentTime;
-    const notes = [392, 349.23, 293.66, 261.63]; // G4, F4, D4, C4
-    
-    notes.forEach((freq, i) => {
-        const osc = audioContext.createOscillator();
-        osc.type = 'triangle';
-        osc.frequency.value = freq;
-        
-        const gain = audioContext.createGain();
-        const startTime = time + i * 0.3;
-        gain.gain.setValueAtTime(0, startTime);
-        gain.gain.linearRampToValueAtTime(0.2, startTime + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.5);
-        
-        osc.connect(gain);
-        gain.connect(audioContext.destination);
-        
-        osc.start(startTime);
-        osc.stop(startTime + 0.5);
-    });
-}
-
-function playPlaceShip() {
-    // Quick placement confirmation
-    const time = audioContext.currentTime;
-    
-    const osc = audioContext.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(400, time);
-    osc.frequency.setValueAtTime(600, time + 0.05);
-    
-    const gain = audioContext.createGain();
-    gain.gain.setValueAtTime(0.1, time);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
-    
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    
-    osc.start(time);
-    osc.stop(time + 0.1);
-}
+document.getElementById('sound-toggle').addEventListener('click', event => {
+    soundsMuted = !soundsMuted;
+    if (soundBus) soundBus.gain.value = soundsMuted ? 0 : 0.5;
+    event.currentTarget.textContent = soundsMuted ? 'Dźwięk: wył.' : 'Dźwięk: wł.';
+    event.currentTarget.setAttribute('aria-pressed', String(soundsMuted));
+});
+document.addEventListener('pointerdown', () => {
+    initAudio();
+    ['hit', 'miss', 'sunk', 'place', 'turn', 'win', 'lose'].forEach(loadSound);
+}, { once: true });
 
 // Game State
 const gameState = {
@@ -333,6 +157,11 @@ const screens = {
 
 // Screen Management
 function showScreen(screenName) {
+    if (screenName !== 'game') {
+        stopTimer();
+        clearTimeout(pendingTurnChange);
+        pendingTurnChange = null;
+    }
     Object.values(screens).forEach(screen => {
         if (screen) screen.classList.remove('active');
     });
@@ -729,6 +558,7 @@ function handleSetupClick(row, col) {
     
     updateShipButtons();
     checkSetupComplete();
+    renderFleetSprites('setup-grid', ships);
 }
 
 function checkSetupComplete() {
@@ -750,6 +580,7 @@ function resetSetup() {
     createGrid('setup-grid', true);
     updateShipButtons();
     checkSetupComplete();
+    renderFleetSprites('setup-grid', ships);
 }
 
 // ================== RANDOM PLACEMENT ==================
@@ -822,6 +653,7 @@ function randomPlacement() {
     
     updateShipButtons();
     checkSetupComplete();
+    renderFleetSprites('setup-grid', ships);
 }
 
 // ================== LOCAL GAME FLOW ==================
@@ -832,8 +664,8 @@ function startLocalGame() {
     gameState.players[2].board = initializeBoard();
     gameState.players[1].ships = [];
     gameState.players[2].ships = [];
-    gameState.players[1].shipsRemaining = 5;
-    gameState.players[2].shipsRemaining = 5;
+    gameState.players[1].shipsRemaining = getShipCount();
+    gameState.players[2].shipsRemaining = getShipCount();
     gameState.players[1].shots = 0;
     gameState.players[2].shots = 0;
     gameState.players[1].hits = 0;
@@ -942,6 +774,24 @@ function renderEnemyGrid(enemyPlayer) {
     }
 }
 
+function renderFleetSprites(containerId, ships) {
+    const grid = document.getElementById(containerId);
+    grid.querySelectorAll('.fleet-sprite').forEach(sprite => sprite.remove());
+    for (const ship of ships) {
+        if (!ship.cells.length) continue;
+        const [row, col] = ship.cells[0];
+        const anchor = grid.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+        if (!anchor) continue;
+        const sprite = document.createElement('img');
+        sprite.src = `assets/ship-${ship.size}.svg`;
+        sprite.alt = '';
+        sprite.draggable = false;
+        sprite.className = 'fleet-sprite' + (ship.isHorizontal ? '' : ' vertical') + (ship.isSunk ? ' wreck' : '');
+        sprite.style.setProperty('--ship-length', ship.size);
+        anchor.appendChild(sprite);
+    }
+}
+
 function renderOwnGrid(playerNum) {
     const container = document.getElementById('own-grid');
     container.innerHTML = '';
@@ -979,6 +829,7 @@ function renderOwnGrid(playerNum) {
             container.appendChild(cell);
         }
     }
+    renderFleetSprites('own-grid', gameState.players[playerNum].ships);
 }
 
 // ================== TIMER SYSTEM ==================
@@ -1031,66 +882,19 @@ function updateTimerDisplay(seconds) {
 }
 
 function handleTimerExpired() {
+    if (gameState.phase !== 'game') return;
     if (gameState.mode === 'online') {
-        // In online mode, perform random attack
-        if (gameState.isMyTurn) {
-            performRandomOnlineAttack();
-        }
+        // The server owns online turn expiry; never invent an attack locally.
+        gameState.isMyTurn = false;
+        updateOnlineGameUI();
     } else {
-        // Local mode - perform random attack then switch turns
-        if (!gameState.hasAttacked) {
-            performRandomAttack();
-        }
         endTurn();
-    }
-}
-
-function performRandomOnlineAttack() {
-    // Find all unattacked cells on enemy board
-    const availableCells = [];
-    for (let row = 0; row < getGridSize(); row++) {
-        for (let col = 0; col < getGridSize(); col++) {
-            if (!gameState.enemyBoardState[row][col].isHit) {
-                availableCells.push({ row, col });
-            }
-        }
-    }
-
-    if (availableCells.length > 0) {
-        const randomCell = availableCells[Math.floor(Math.random() * availableCells.length)];
-        // Send random attack to server
-        gameState.socket.emit('attack', { row: randomCell.row, col: randomCell.col });
-    }
-}
-
-function performRandomAttack() {
-    const currentPlayer = gameState.currentPlayer;
-    const enemyPlayer = currentPlayer === 1 ? 2 : 1;
-    const board = gameState.players[enemyPlayer].board;
-
-    // Find all unattacked cells
-    const availableCells = [];
-    for (let row = 0; row < getGridSize(); row++) {
-        for (let col = 0; col < getGridSize(); col++) {
-            if (!board[row][col].isHit) {
-                availableCells.push({ row, col });
-            }
-        }
-    }
-
-    if (availableCells.length > 0) {
-        const randomCell = availableCells[Math.floor(Math.random() * availableCells.length)];
-        // Temporarily allow attack
-        gameState.hasAttacked = false;
-        handleAttack(randomCell.row, randomCell.col);
-    } else {
-        // No moves left, immediately end turn
-        endTurn();
+        document.getElementById('transition-subtitle').textContent = 'Czas minął — tura przepada bez strzału.';
     }
 }
 
 function handleAttack(row, col) {
-    if (gameState.hasAttacked) return;
+    if (gameState.phase !== 'game' || gameState.hasAttacked) return;
     
     const currentPlayer = gameState.currentPlayer;
     const enemyPlayer = currentPlayer === 1 ? 2 : 1;
@@ -1155,10 +959,13 @@ function handleAttack(row, col) {
     
     if (gameState.players[enemyPlayer].shipsRemaining === 0) {
         stopTimer();
-        setTimeout(() => endGame(currentPlayer), 500);
+        gameState.hasAttacked = true;
+        gameState.phase = 'battle-ending';
+        document.getElementById('end-turn-btn').disabled = true;
+        pendingTurnChange = setTimeout(() => endGame(currentPlayer), 500);
     } else if (shouldAutoEndTurn) {
         // Auto-end turn after a brief delay to let player see result
-        setTimeout(() => {
+        pendingTurnChange = setTimeout(() => {
             endTurn();
         }, 1500);
     }
@@ -1183,6 +990,9 @@ function revealAdjacentCells(ship, enemyPlayer) {
 }
 
 function endTurn() {
+    if (gameState.mode !== 'local' || gameState.phase !== 'game') return;
+    clearTimeout(pendingTurnChange);
+    pendingTurnChange = null;
     stopTimer();
     const nextPlayer = gameState.currentPlayer === 1 ? 2 : 1;
     gameState.currentPlayer = nextPlayer;
@@ -1201,13 +1011,14 @@ function endGame(winner) {
     if (gameState.mode === 'online') {
         const isWinner = (winner === 'host' && gameState.playerRole === 'host') || 
                          (winner === 'guest' && gameState.playerRole === 'guest');
-        document.getElementById('winner-text').textContent = isWinner ? '🎉 Wygrałeś!' : '😞 Przegrałeś!';
+        document.getElementById('winner-text').textContent = isWinner ? 'Zwycięstwo!' : 'Flota pokonana';
         playSound(isWinner ? 'win' : 'lose');
     } else {
-        document.getElementById('winner-text').textContent = `🎉 Gracz ${winner} wygrywa!`;
+        document.getElementById('winner-text').textContent = `Gracz ${winner} zwycięża`;
         playSound('win');
     }
     
+    document.getElementById('gameover-screen').classList.toggle('defeat', gameState.mode === 'online' && !((winner === 'host' && gameState.playerRole === 'host') || (winner === 'guest' && gameState.playerRole === 'guest')));
     const stats = document.getElementById('game-stats');
     
     if (gameState.mode === 'online') {
@@ -1230,12 +1041,14 @@ function endGame(winner) {
     } else {
         const p1 = gameState.players[1];
         const p2 = gameState.players[2];
-        stats.innerHTML = `
-            <p><strong>Gracz 1:</strong></p>
-            <p>Strzały: ${p1.shots} | Trafienia: ${p1.hits} | Celność: ${p1.shots > 0 ? Math.round(p1.hits / p1.shots * 100) : 0}%</p>
-            <p style="margin-top: 16px;"><strong>Gracz 2:</strong></p>
-            <p>Strzały: ${p2.shots} | Trafienia: ${p2.hits} | Celność: ${p2.shots > 0 ? Math.round(p2.hits / p2.shots * 100) : 0}%</p>
-        `;
+        stats.innerHTML = [p1, p2].map((player, index) => {
+            const accuracy = player.shots ? Math.round(player.hits / player.shots * 100) : 0;
+            return `<article class="result-card ${winner === index + 1 ? 'result-winner' : ''}">
+                <div class="result-player"><span>Gracz ${index + 1}</span><span class="result-rank">${winner === index + 1 ? 'ZWYCIĘZCA' : 'POKONANY'}</span></div>
+                <div class="result-metrics"><div><strong>${player.shots}</strong><span>Strzały</span></div><div><strong>${player.hits}</strong><span>Trafienia</span></div><div><strong>${accuracy}<small>%</small></strong><span>Celność</span></div></div>
+                <div class="accuracy-track" aria-hidden="true"><i style="width:${accuracy}%"></i></div>
+            </article>`;
+        }).join('');
         // Hide leave button for local mode
         document.getElementById('leave-game-btn').style.display = 'none';
     }
@@ -1538,6 +1351,7 @@ function renderOnlineOwnGrid() {
             container.appendChild(cell);
         }
     }
+    renderFleetSprites('own-grid', gameState.myShips);
 }
 
 function handleOnlineAttack(row, col) {

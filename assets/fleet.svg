@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" fill="none">
+<defs>
+ <linearGradient id="sea" x2="0" y2="1"><stop stop-color="#163e50"/><stop offset="1" stop-color="#081e2c"/></linearGradient>
+ <linearGradient id="hull" x1="200" y1="220" x2="570" y2="380" gradientUnits="userSpaceOnUse"><stop stop-color="#8baeb4"/><stop offset=".5" stop-color="#385e70"/><stop offset="1" stop-color="#162f41"/></linearGradient>
+ <linearGradient id="deck"><stop stop-color="#b0c8c6"/><stop offset="1" stop-color="#4c7582"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#43d8c4" stop-opacity=".16"/><stop offset="1" stop-color="#43d8c4" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse cx="400" cy="270" rx="350" ry="205" fill="url(#glow)"/>
+<g stroke="#58b4ba" stroke-opacity=".15"><ellipse cx="400" cy="270" rx="310" ry="150"/><ellipse cx="400" cy="270" rx="230" ry="110"/><ellipse cx="400" cy="270" rx="150" ry="70"/><path d="M50 270h700M400 80v380M160 140l480 260M160 400l480-260"/></g>
+<g stroke="#6de0d0" stroke-linecap="round"><path d="M94 337l166-79M133 369l136-66M232 405l132-63M530 231l123-58M553 269l148-71" stroke-opacity=".22"/><path d="M114 318l80-38M169 390l55-26M620 250l54-26" stroke-opacity=".4"/></g>
+<ellipse cx="416" cy="330" rx="230" ry="48" fill="#020e19" opacity=".45" transform="rotate(-23 416 330)"/>
+<path d="M169 316l315-164 162 63-68 94-267 100-104-45z" fill="url(#hull)"/>
+<path d="M169 316l315-164 162 63-105 57-282 102z" fill="url(#deck)"/>
+<path d="M169 316l90 58 52 35-104-45z" fill="#274859"/>
+<path d="M259 374l282-102 105-57-68 94-267 100z" fill="#244858"/>
+<path d="M277 372l280-104 65-38" stroke="#8fd1cd" stroke-opacity=".5"/>
+<path d="M280 291l143-71 95 38-147 64z" fill="#345869"/><path d="M280 291v-43l143-71v43z" fill="#5f8490"/><path d="M280 248l143-71 95 38-147 64z" fill="#90afb2"/><path d="M371 279v43l147-64v-43z" fill="#284b5d"/>
+<path d="M335 236v-52l65-31 54 23v50l-65 31z" fill="#658d98"/><path d="M335 184l65-31 54 23-65 31z" fill="#c1d3cc"/><path d="M389 207l65-31v50l-65 31z" fill="#31596b"/>
+<path d="M342 192l36 16v12l-36-16zM399 209l17-8v12l-17 8zM424 197l20-9v12l-20 9z" fill="#102d40"/>
+<path d="M399 157V78m-33 37h66m-51 20h37" stroke="#a6c5c3" stroke-width="4"/><path d="M399 79l33 10-33 11" fill="#54dac0"/>
+<path d="M468 212l39-20 35 14-37 20zM231 313l40-20 33 14-40 20z" fill="#294d5e"/>
+<path d="M493 201l45-24m-281 132l-44 22" stroke="#b1c9c5" stroke-width="7"/>
+<g fill="#a2c7c6"><circle cx="333" cy="362" r="3"/><circle cx="353" cy="354" r="3"/><circle cx="373" cy="346" r="3"/><circle cx="393" cy="338" r="3"/></g>
+<g stroke="#57d9c3" stroke-opacity=".6"><path d="M100 181v-15h15M685 166h15v15M100 391v15h15M685 406h15v-15"/><path d="M575 111h65m-32-10v20"/></g>
+<text x="106" y="151" fill="#62a4ad" font-family="monospace" font-size="10" letter-spacing="3">SEKTOR 07 / BAŁTYK</text>
+<text x="575" y="427" fill="#62a4ad" font-family="monospace" font-size="10" letter-spacing="2">54° 32′ N · 18° 34′ E</text>
+</svg>

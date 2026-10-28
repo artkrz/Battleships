@@ -88,6 +88,22 @@ function createRoom(hostSocket, options = {}) {
     return room;
 }
 
+// The server expires online turns without modifying either board or shot totals.
+function scheduleRoomTurnTimer(room) {
+    clearTimeout(room.turnTimerId);
+    room.turnTimerId = null;
+    if (!room.gameStarted || room.gameOver || !room.options.turnTimer) return;
+    room.turnTimerId = setTimeout(() => {
+        if (rooms.get(room.code) !== room || !room.gameStarted || room.gameOver) return;
+        const previous = room.currentTurn;
+        const next = previous === 'host' ? 'guest' : 'host';
+        room.currentTurn = next;
+        io.to(room.players[previous].id).emit('turn-change', { isYourTurn: false });
+        io.to(room.players[next].id).emit('turn-change', { isYourTurn: true });
+        scheduleRoomTurnTimer(room);
+    }, room.options.turnTimer * 1000);
+}
+
 // Socket.io connection handling
 io.on('connection', (socket) => {
     console.log(`Player connected: ${socket.id}`);
@@ -173,6 +189,7 @@ io.on('connection', (socket) => {
             if (room.players.host.ready && room.players.guest && room.players.guest.ready) {
                 room.gameStarted = true;
                 room.currentTurn = 'host';
+                scheduleRoomTurnTimer(room);
                 
                 // Notify both players to start the game
                 io.to(room.players.host.id).emit('game-start', { 
@@ -192,7 +209,7 @@ io.on('connection', (socket) => {
     // Handle attack
     socket.on('attack', (data) => {
         const room = rooms.get(socket.roomCode);
-        if (!room || room.gameOver) return;
+        if (!room || !room.gameStarted || room.gameOver) return;
         
         const playerRole = socket.playerRole;
         
@@ -290,6 +307,7 @@ io.on('connection', (socket) => {
         // Send to opponent
         socket.to(socket.roomCode).emit('opponent-attacked', result);
         
+        clearTimeout(room.turnTimerId);
         // Switch turns if game not over
         // If shootAgainOnHit is enabled and it was a hit, don't switch turns
         if (!room.gameOver) {
@@ -303,6 +321,7 @@ io.on('connection', (socket) => {
                 // Restart timer for the same player if shoot again on hit
                 io.to(room.players[playerRole].id).emit('turn-change', { isYourTurn: true, restartTimer: true });
             }
+            scheduleRoomTurnTimer(room);
         }
     });
     
@@ -329,6 +348,7 @@ io.on('connection', (socket) => {
                         if (!currentRoom.gameStarted || 
                             (playerRole === 'host' && !currentRoom.players.guest) ||
                             (playerRole === 'guest')) {
+                            clearTimeout(currentRoom.turnTimerId);
                             rooms.delete(socket.roomCode);
                             console.log(`Room ${socket.roomCode} deleted after timeout`);
                         }
@@ -382,6 +402,7 @@ io.on('connection', (socket) => {
             const room = rooms.get(socket.roomCode);
             if (room) {
                 socket.to(socket.roomCode).emit('opponent-disconnected');
+                clearTimeout(room.turnTimerId);
                 rooms.delete(socket.roomCode);
             }
             socket.leave(socket.roomCode);

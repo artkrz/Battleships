@@ -2,21 +2,25 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Statki - Gra dla dwóch graczy</title>
     <link rel="stylesheet" href="styles.css">
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div id="app">
+        <header class="masthead"><a href="/" class="brand" aria-label="Statki — menu główne"><span class="brand-symbol" aria-hidden="true">⌖</span> STATKI<span class="brand-edition"> / NAVAL COMMAND</span></a><button id="sound-toggle" class="sound-toggle" aria-pressed="false">Dźwięk: wł.</button><span class="masthead-status"><i></i> FLOTA W GOTOWOŚCI</span></header>
         <!-- Start Screen -->
         <div id="start-screen" class="screen active">
-            <h1>🚢 Statki</h1>
-            <p>Gra dla dwóch graczy</p>
+            <div class="hero-art"><img src="assets/fleet.svg" alt="Okręt wojenny na morskiej mapie taktycznej"><span class="art-tag">OPERACJA / OTWARTE WODY</span></div>
+            <div class="hero-copy"><span class="eyebrow">STRATEGIA · RYWALIZACJA · ZWYCIĘSTWO</span>
+            <h1>Cała flota.<br>Jeden cel<span>.</span></h1>
+            <p>Rozmieść okręty. Przechytrz przeciwnika.<br>Przejmij kontrolę nad oceanem.</p></div>
             <div class="mode-buttons">
-                <button id="local-btn" class="btn btn-primary">Gra lokalna</button>
-                <button id="online-btn" class="btn btn-secondary">Gra online</button>
+                <button id="local-btn" class="btn btn-primary"><span class="mode-icon" aria-hidden="true">⌖</span><span>Gra lokalna<small>Dwoje graczy, jedno urządzenie</small></span><span aria-hidden="true">↗</span></button>
+                <button id="online-btn" class="btn btn-secondary"><span class="mode-icon" aria-hidden="true">◎</span><span>Gra online<small>Połącz się i rzuć wyzwanie</small></span><span aria-hidden="true">↗</span></button>
             </div>
+            <div class="hero-footer"><span>02 GRACZY</span><span>10 × 10 LUB 15 × 15</span><span>TWÓJ RUCH. TWOJA TAKTYKA.</span></div>
         </div>
 
         <!-- Game Options Screen -->
@@ -141,7 +145,10 @@
 
         <!-- Game Over Screen -->
         <div id="gameover-screen" class="screen">
-            <h2 id="winner-text">🎉 Gracz 1 wygrywa!</h2>
+            <div class="victory-banner" aria-hidden="true"><div class="victory-emblem">★</div></div>
+            <span class="eyebrow battle-complete">RAPORT KOŃCOWY / BITWA ZAKOŃCZONA</span>
+            <h2 id="winner-text">Zwycięstwo!</h2>
+            <p class="victory-caption">Ostatnia salwa. Ocean zna już zwycięzcę.</p>
             <div id="game-stats"></div>
             <div class="gameover-buttons">
                 <button id="play-again-btn" class="btn btn-primary">Zagraj ponownie</button>
