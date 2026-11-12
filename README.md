@@ -2,6 +2,12 @@
 
 A web-based mobile Battleship game for two players with local and online multiplayer support.
 
+## Play Online
+
+[Play Battleships](https://battleships-prrn.onrender.com/)
+
+Production is hosted on Render and deploys automatically when a pull request is merged into `main`.
+
 ## Features
 
 - **Local multiplayer** - Hot-seat mode for two players on one device
