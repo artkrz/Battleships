@@ -62,6 +62,13 @@ assert.equal(get('gameState.currentPlayer'), 2);
 get("gameState.phase='game'; gameState.mode='online'; gameState.isMyTurn=true; gameState.socket={emit(){throw Error('Unexpected attack')}}; handleTimerExpired()");
 assert.equal(get('gameState.isMyTurn'), false);
 
+// Reset clears a placed fleet and disables confirmation without referencing stale ships.
+get("gameState.mode='local'; gameState.currentPlayer=1; createGrid=()=>{}; gameState.players[1].ships=[{id:'test'}]; resetSetup()");
+assert.equal(get('gameState.players[1].ships.length'),0);
+assert.equal(get('gameState.players[1].board[0][0].hasShip'),false);
+assert.equal(nodes.get('confirm-setup').disabled,true);
+assert.equal(nodes.get('deployment-count').textContent,'0 / 5');
+
 const serverClock = clock();
 const events = [];
 const app = {use(){}, get(){}};

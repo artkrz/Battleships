@@ -203,7 +203,7 @@ function initializeSocket() {
     });
     
     gameState.socket.on('join-error', (data) => {
-        alert(data.message);
+        document.getElementById('lobby-feedback').textContent = data.message;
     });
     
     gameState.socket.on('opponent-joined', () => {
@@ -304,6 +304,20 @@ function initializeSocket() {
     });
 }
 
+function decorateGrid(container) {
+    container.querySelectorAll('.grid-coordinate').forEach(label => label.remove());
+    for (let i = 0; i < getGridSize(); i++) {
+        for (const axis of ['column', 'row']) {
+            const label = document.createElement('span');
+            label.className = `grid-coordinate coordinate-${axis}`;
+            label.setAttribute('aria-hidden', 'true');
+            label.style.setProperty('--coordinate', i);
+            label.textContent = axis === 'column' ? String.fromCharCode(65 + i) : i + 1;
+            container.appendChild(label);
+        }
+    }
+}
+
 // ================== CREATE GRID ==================
 function createGrid(containerId, isSetup = false, isEnemy = false) {
     const container = document.getElementById(containerId);
@@ -318,11 +332,11 @@ function createGrid(containerId, isSetup = false, isEnemy = false) {
         document.body.classList.remove('standard-grid');
         // Set cell size directly for 15x15 grid to fit on screen
         // 15 cells + gaps need to fit in ~95vw
-        document.documentElement.style.setProperty('--cell-size', 'min(6vw, 24px)');
+        document.documentElement.style.removeProperty('--cell-size');
     } else {
         document.body.classList.add('standard-grid');
         document.body.classList.remove('large-grid');
-        document.documentElement.style.setProperty('--cell-size', 'min(9vw, 36px)');
+        document.documentElement.style.removeProperty('--cell-size');
     }
 
     container.style.gridTemplateColumns = `repeat(${gridSize}, var(--cell-size))`;
@@ -360,18 +374,40 @@ function createGrid(containerId, isSetup = false, isEnemy = false) {
             container.appendChild(cell);
         }
     }
+    decorateGrid(container);
 }
 
 // ================== SHIP SELECTION ==================
+function updateDeploymentProgress(count) {
+    document.getElementById('deployment-count').textContent = `${count} / ${getShipCount()}`;
+    document.getElementById('deployment-progress-fill').style.width = `${count / getShipCount() * 100}%`;
+    document.getElementById('deployment-feedback').textContent = count === getShipCount()
+        ? 'Flota gotowa. Zatwierdź ustawienie.' : 'Wybierz kolejny okręt lub użyj losowego ustawienia.';
+}
+
+function reportShot(row, col, hit, sunk, incoming = false) {
+    const coordinate = `${String.fromCharCode(65 + col)}${row + 1}`;
+    const result = sunk ? 'Okręt zatopiony' : hit ? 'Trafienie' : 'Pudło';
+    document.getElementById('battle-feedback').textContent = `${incoming ? 'Przeciwnik' : 'Twój strzał'} · ${coordinate} · ${result}`;
+}
+
 function createShipButtons() {
     const container = document.getElementById('ships-to-place');
     container.innerHTML = '';
     
+    updateDeploymentProgress(0);
     getShips().forEach(ship => {
         const btn = document.createElement('button');
         btn.className = 'ship-btn';
         btn.dataset.shipId = ship.id;
-        btn.textContent = `${ship.name} (${ship.size})`;
+        btn.setAttribute('aria-pressed', 'false');
+        btn.style.setProperty('--ship-icon', `url("assets/ship-${ship.size}.svg")`);
+        const name = document.createElement('span');
+        name.textContent = ship.name;
+        const size = document.createElement('span');
+        size.className = 'ship-size';
+        size.textContent = '▪'.repeat(ship.size);
+        btn.append(name, size);
         btn.addEventListener('click', () => selectShip(ship.id));
         container.appendChild(btn);
     });
@@ -386,9 +422,11 @@ function selectShip(shipId) {
     if (isPlaced) return;
     
     gameState.selectedShip = getShips().find(s => s.id === shipId);
+    document.getElementById('deployment-feedback').textContent = `${gameState.selectedShip.name}: dotknij mapy, aby rozmieścić okręt.`;
     
     document.querySelectorAll('.ship-btn').forEach(btn => {
         btn.classList.remove('selected');
+        btn.setAttribute('aria-pressed', String(btn.dataset.shipId === shipId));
         if (btn.dataset.shipId === shipId) {
             btn.classList.add('selected');
         }
@@ -404,6 +442,8 @@ function updateShipButtons() {
         const shipId = btn.dataset.shipId;
         const isPlaced = player.ships.some(s => s.id === shipId);
         btn.classList.toggle('placed', isPlaced);
+        btn.disabled = isPlaced;
+        btn.setAttribute('aria-pressed', 'false');
         btn.classList.remove('selected');
     });
     
@@ -518,13 +558,19 @@ function getShipPartClass(index, totalSize, isHorizontal) {
 }
 
 function handleSetupClick(row, col) {
-    if (!gameState.selectedShip) return;
+    if (!gameState.selectedShip) {
+        document.getElementById('deployment-feedback').textContent = 'Najpierw wybierz okręt z listy.';
+        return;
+    }
     
     const ship = gameState.selectedShip;
     const board = gameState.mode === 'online' ? gameState.myBoard : gameState.players[gameState.currentPlayer].board;
     const ships = gameState.mode === 'online' ? gameState.myShips : gameState.players[gameState.currentPlayer].ships;
     
-    if (!canPlaceShipOnBoard(row, col, ship.size, gameState.isHorizontal, board)) return;
+    if (!canPlaceShipOnBoard(row, col, ship.size, gameState.isHorizontal, board)) {
+        document.getElementById('deployment-feedback').textContent = 'Tu okręt się nie zmieści. Zostaw też odstęp od innych statków.';
+        return;
+    }
     
     const cells = getShipCells(row, col, ship.size, gameState.isHorizontal);
     const isHorizontal = gameState.isHorizontal;
@@ -563,6 +609,7 @@ function handleSetupClick(row, col) {
 
 function checkSetupComplete() {
     const ships = gameState.mode === 'online' ? gameState.myShips : gameState.players[gameState.currentPlayer].ships;
+    updateDeploymentProgress(ships.length);
     const allPlaced = ships.length === getShips().length;
     document.getElementById('confirm-setup').disabled = !allPlaced;
 }
@@ -580,7 +627,6 @@ function resetSetup() {
     createGrid('setup-grid', true);
     updateShipButtons();
     checkSetupComplete();
-    renderFleetSprites('setup-grid', ships);
 }
 
 // ================== RANDOM PLACEMENT ==================
@@ -718,6 +764,7 @@ function continueGame() {
 
 function startBattle() {
     showScreen('game');
+    document.getElementById('battle-feedback').textContent = 'Wybierz cel na wodach przeciwnika.';
     gameState.hasAttacked = false;
     document.getElementById('end-turn-btn').style.display = 'block';
     updateGameUI();
@@ -772,6 +819,7 @@ function renderEnemyGrid(enemyPlayer) {
             container.appendChild(cell);
         }
     }
+    decorateGrid(container);
 }
 
 function renderFleetSprites(containerId, ships) {
@@ -830,6 +878,7 @@ function renderOwnGrid(playerNum) {
         }
     }
     renderFleetSprites('own-grid', gameState.players[playerNum].ships);
+    decorateGrid(container);
 }
 
 // ================== TIMER SYSTEM ==================
@@ -956,6 +1005,8 @@ function handleAttack(row, col) {
     }
     
     updateGameUI();
+    const struckShip = gameState.players[enemyPlayer].ships.find(ship => ship.id === board[row][col].shipId);
+    reportShot(row, col, wasHit, Boolean(struckShip && struckShip.isSunk));
     
     if (gameState.players[enemyPlayer].shipsRemaining === 0) {
         stopTimer();
@@ -1018,6 +1069,8 @@ function endGame(winner) {
         playSound('win');
     }
     
+    const lost = gameState.mode === 'online' && !((winner === 'host' && gameState.playerRole === 'host') || (winner === 'guest' && gameState.playerRole === 'guest'));
+    document.getElementById('result-caption').textContent = lost ? 'Flota stracona. Następna operacja może należeć do Ciebie.' : 'Misja zakończona. Przewaga na oceanie należy do Ciebie.';
     document.getElementById('gameover-screen').classList.toggle('defeat', gameState.mode === 'online' && !((winner === 'host' && gameState.playerRole === 'host') || (winner === 'guest' && gameState.playerRole === 'guest')));
     const stats = document.getElementById('game-stats');
     
@@ -1025,15 +1078,13 @@ function endGame(winner) {
         const myWins = gameState.playerRole === 'host' ? gameState.roomScore.host : gameState.roomScore.guest;
         const opponentWins = gameState.playerRole === 'host' ? gameState.roomScore.guest : gameState.roomScore.host;
         
-        stats.innerHTML = `
-            <div class="score-display">
-                <span class="my-score">Ty: ${myWins}</span>
-                <span class="score-separator">-</span>
-                <span class="opponent-score">Przeciwnik: ${opponentWins}</span>
-            </div>
-            <p style="margin-top: 16px;"><strong>Twoje statystyki:</strong></p>
-            <p>Strzały: ${gameState.myStats?.shots || 0} | Trafienia: ${gameState.myStats?.hits || 0}</p>
-        `;
+        const shots = gameState.myStats?.shots || 0;
+        const hits = gameState.myStats?.hits || 0;
+        const accuracy = shots ? Math.round(hits / shots * 100) : 0;
+        stats.innerHTML = `<div class="series-score"><span>WYNIK POJEDYNKU</span><strong>${myWins} <small>:</small> ${opponentWins}</strong><div>Ty <span>Przeciwnik</span></div></div>
+            <article class="result-card ${lost ? '' : 'result-winner'}"><div class="result-player"><span>Twoja flota</span><span class="result-rank">${lost ? 'POKONANA' : 'ZWYCIĘSKA'}</span></div>
+            <div class="result-metrics"><div><strong>${shots}</strong><span>Strzały</span></div><div><strong>${hits}</strong><span>Trafienia</span></div><div><strong>${accuracy}<small>%</small></strong><span>Celność</span></div></div>
+            <div class="accuracy-track" aria-hidden="true"><i style="width:${accuracy}%"></i></div></article>`;
         // Show rematch buttons for online mode
         document.getElementById('play-again-btn').textContent = 'Zagraj ponownie';
         document.getElementById('leave-game-btn').style.display = 'inline-block';
@@ -1088,7 +1139,8 @@ function createRoom() {
 function joinRoom() {
     const code = document.getElementById('room-code-input').value.trim().toUpperCase();
     if (code.length !== 6) {
-        alert('Kod pokoju musi mieć 6 znaków');
+        document.getElementById('lobby-feedback').textContent = 'Wpisz pełny, sześcioznakowy kod pokoju.';
+        document.getElementById('room-code-input').focus();
         return;
     }
     gameState.socket.emit('join-room', code);
@@ -1236,6 +1288,7 @@ function confirmOnlineSetup() {
 
 function startOnlineBattle() {
     showScreen('game');
+    document.getElementById('battle-feedback').textContent = gameState.isMyTurn ? 'Wybierz cel na wodach przeciwnika.' : 'Poczekaj na strzał przeciwnika.';
     document.getElementById('end-turn-btn').style.display = 'none';
     updateOnlineGameUI();
 }
@@ -1251,7 +1304,7 @@ function updateOnlineGameUI() {
     }
     
     document.getElementById('player1-ships').innerHTML = `Ty: <span class="ship-count">${getShipCount() - countSunkShips(gameState.myShips)}</span> statków`;
-    document.getElementById('player2-ships').innerHTML = `Przeciwnik: <span class="ship-count">${gameState.enemyShipsRemaining || getShipCount()}</span> statków`;
+    document.getElementById('player2-ships').innerHTML = `Przeciwnik: <span class="ship-count">${gameState.enemyShipsRemaining ?? getShipCount()}</span> statków`;
     
     renderOnlineEnemyGrid();
     renderOnlineOwnGrid();
@@ -1272,11 +1325,11 @@ function renderOnlineEnemyGrid() {
     if (gridSize === 15) {
         document.body.classList.add('large-grid');
         document.body.classList.remove('standard-grid');
-        document.documentElement.style.setProperty('--cell-size', 'min(6vw, 24px)');
+        document.documentElement.style.removeProperty('--cell-size');
     } else {
         document.body.classList.add('standard-grid');
         document.body.classList.remove('large-grid');
-        document.documentElement.style.setProperty('--cell-size', 'min(9vw, 36px)');
+        document.documentElement.style.removeProperty('--cell-size');
     }
 
     // Set grid size dynamically
@@ -1309,6 +1362,7 @@ function renderOnlineEnemyGrid() {
             container.appendChild(cell);
         }
     }
+    decorateGrid(container);
 }
 
 function renderOnlineOwnGrid() {
@@ -1352,6 +1406,7 @@ function renderOnlineOwnGrid() {
         }
     }
     renderFleetSprites('own-grid', gameState.myShips);
+    decorateGrid(container);
 }
 
 function handleOnlineAttack(row, col) {
@@ -1387,7 +1442,7 @@ function handleAttackResult(result) {
     gameState.enemyBoardState[row][col].hasShip = isHit;
     
     if (isSunk && sunkShip) {
-        gameState.enemyShipsRemaining = (gameState.enemyShipsRemaining || getShipCount()) - 1;
+        gameState.enemyShipsRemaining = (gameState.enemyShipsRemaining ?? getShipCount()) - 1;
         
         // Mark all ship cells as sunk
         sunkShip.cells.forEach(([r, c]) => {
@@ -1413,6 +1468,7 @@ function handleAttackResult(result) {
     }
     
     updateOnlineGameUI();
+    reportShot(row, col, isHit, isSunk);
     
     if (gameOver) {
         setTimeout(() => endGame(winner), 500);
@@ -1447,6 +1503,7 @@ function handleOpponentAttack(result) {
     }
     
     updateOnlineGameUI();
+    reportShot(row, col, isHit, isSunk, true);
     
     if (result.gameOver) {
         setTimeout(() => endGame(result.winner), 500);
@@ -1551,6 +1608,12 @@ function checkUrlForJoin() {
             joinRoom();
         }, 500);
     }
+}
+
+// Keep the targeting board and controls in view on phones.
+if (typeof window.matchMedia === 'function') {
+    const ownFleet = document.querySelector('details.own-board');
+    ownFleet.open = !window.matchMedia('(max-width: 759px)').matches;
 }
 
 // Initialize
