@@ -4,28 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Statki - Gra dla dwóch graczy</title>
+    <meta name="theme-color" content="#080f17">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="command.css">
+    <link rel="preload" as="image" href="assets/naval-command.jpg">
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div id="app">
-        <header class="masthead"><a href="/" class="brand" aria-label="Statki — menu główne"><span class="brand-symbol" aria-hidden="true">⌖</span> STATKI<span class="brand-edition"> / NAVAL COMMAND</span></a><button id="sound-toggle" class="sound-toggle" aria-pressed="false">Dźwięk: wł.</button><span class="masthead-status"><i></i> FLOTA W GOTOWOŚCI</span></header>
+        <header class="masthead"><a href="/" class="brand" aria-label="Statki — menu główne"><span class="brand-symbol" aria-hidden="true">⚓</span> STATKI<span class="brand-edition"> / DOWÓDZTWO FLOTY</span></a><button id="sound-toggle" class="sound-toggle" aria-pressed="false">Dźwięk: wł.</button><span class="masthead-status"><i></i> FLOTA W GOTOWOŚCI</span></header>
         <!-- Start Screen -->
         <div id="start-screen" class="screen active">
-            <div class="hero-art"><img src="assets/fleet.svg" alt="Okręt wojenny na morskiej mapie taktycznej"><span class="art-tag">OPERACJA / OTWARTE WODY</span></div>
-            <div class="hero-copy"><span class="eyebrow">STRATEGIA · RYWALIZACJA · ZWYCIĘSTWO</span>
-            <h1>Cała flota.<br>Jeden cel<span>.</span></h1>
-            <p>Rozmieść okręty. Przechytrz przeciwnika.<br>Przejmij kontrolę nad oceanem.</p></div>
+            <div class="hero-art" aria-hidden="true"><img src="assets/naval-command.jpg" alt=""><span class="art-tag">OPERACJA 01 / MORZE PÓŁNOCNE</span></div>
+            <div class="hero-copy"><span class="eyebrow">TAKTYCZNA BITWA MORSKA</span>
+            <h1>OCEAN NIE<br>WYBACZA<span>.</span></h1>
+            <p>Twoja flota. Twoja taktyka.<br>Zatop przeciwnika, zanim on znajdzie Ciebie.</p></div>
             <div class="mode-buttons">
-                <button id="local-btn" class="btn btn-primary"><span class="mode-icon" aria-hidden="true">⌖</span><span>Gra lokalna<small>Dwoje graczy, jedno urządzenie</small></span><span aria-hidden="true">↗</span></button>
-                <button id="online-btn" class="btn btn-secondary"><span class="mode-icon" aria-hidden="true">◎</span><span>Gra online<small>Połącz się i rzuć wyzwanie</small></span><span aria-hidden="true">↗</span></button>
+                <button id="local-btn" class="btn btn-primary"><span class="mode-icon" aria-hidden="true">⌖</span><span>Graj na jednym telefonie<small>Przekazuj telefon między turami</small></span><span aria-hidden="true">↗</span></button>
+                <button id="online-btn" class="btn btn-secondary"><span class="mode-icon" aria-hidden="true">◎</span><span>Rzuć wyzwanie online<small>Zaproś znajomego kodem pokoju</small></span><span aria-hidden="true">↗</span></button>
             </div>
             <div class="hero-footer"><span>02 GRACZY</span><span>10 × 10 LUB 15 × 15</span><span>TWÓJ RUCH. TWOJA TAKTYKA.</span></div>
         </div>
 
         <!-- Game Options Screen -->
         <div id="options-screen" class="screen">
-            <h2>Opcje gry</h2>
+            <span class="eyebrow">01 / PRZYGOTOWANIE OPERACJI</span><h2>Zasady starcia</h2><p class="screen-intro">Ustal warunki. Reszta zależy od Twojej taktyki.</p>
             <div class="options-container">
                 <div class="option-group">
                     <label>Rozmiar planszy:</label>
@@ -56,33 +59,39 @@
 
         <!-- Online Lobby Screen -->
         <div id="lobby-screen" class="screen">
-            <h2>Gra Online</h2>
+            <div class="signal-emblem" aria-hidden="true"><i></i><b>◎</b></div>
+            <span class="eyebrow">ŁĄCZNOŚĆ MIĘDZY FLOTAMI</span><h2>Rzuć wyzwanie</h2>
+            <p class="screen-intro">Dwa telefony. Jeden ocean. Zaproś znajomego do bitwy.</p>
             <div class="lobby-options">
-                <button id="create-room-btn" class="btn btn-primary">Utwórz pokój</button>
+                <button id="create-room-btn" class="btn btn-primary">Utwórz nowy pokój ↗</button>
                 <div class="divider">lub</div>
                 <div class="join-room">
-                    <input type="text" id="room-code-input" placeholder="Kod pokoju" maxlength="6">
+                    <label for="room-code-input" class="field-label">MASZ JUŻ ZAPROSZENIE?</label>
+                    <input type="text" id="room-code-input" placeholder="ABC123" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="lobby-feedback">
                     <button id="join-room-btn" class="btn btn-primary">Dołącz do pokoju</button>
                 </div>
             </div>
+            <p id="lobby-feedback" class="inline-feedback" role="status" aria-live="polite">Kod pokoju znajdziesz u osoby, która go utworzyła.</p>
             <button id="back-to-menu" class="btn btn-text">← Powrót</button>
         </div>
 
         <!-- Waiting Room Screen -->
         <div id="waiting-screen" class="screen">
-            <h2>Oczekiwanie na gracza</h2>
+            <div class="signal-emblem" aria-hidden="true"><i></i><b>◎</b></div>
+            <span class="eyebrow">KANAŁ ŁĄCZNOŚCI OTWARTY</span><h2>Zaproś przeciwnika</h2>
+            <p class="screen-intro">Wyślij kod znajomemu. Gdy dołączy, rozmieścicie floty.</p>
             <div class="room-code-display">
-                <p>Kod pokoju:</p>
+                <p class="field-label">TWÓJ KOD OPERACJI</p>
                 <div id="room-code" class="code"></div>
                 <div class="share-buttons">
-                    <button id="copy-code-btn" class="btn btn-secondary btn-small">📋 Kopiuj kod</button>
-                    <button id="share-btn" class="btn btn-secondary btn-small">📤 Udostępnij</button>
+                    <button id="copy-code-btn" class="btn btn-secondary btn-small">Kopiuj kod</button>
+                    <button id="share-btn" class="btn btn-secondary btn-small">Udostępnij ↗</button>
                 </div>
             </div>
-            <div class="qr-section">
-                <p>Lub zeskanuj kod QR:</p>
-                <img id="qr-code" alt="QR Code">
-            </div>
+            <details class="qr-section" open>
+                <summary>Kod QR do zeskanowania <span aria-hidden="true">⌖</span></summary>
+                <img id="qr-code" alt="Kod QR z zaproszeniem do tego pokoju">
+            </details>
             <div class="loader"></div>
             <p class="waiting-text">Prześlij kod lub link znajomemu...</p>
             <button id="cancel-room-btn" class="btn btn-text">Anuluj</button>
@@ -90,55 +99,67 @@
 
         <!-- Setup Screen -->
         <div id="setup-screen" class="screen">
-            <h2 id="setup-title">Gracz 1 - Rozmieść statki</h2>
-            <div class="ship-selector">
-                <p>Wybierz statek:</p>
-                <div id="ships-to-place" class="ships-list"></div>
-                <div class="setup-buttons">
-                    <button id="rotate-btn" class="btn btn-secondary">Obróć (poziomo)</button>
-                    <button id="random-btn" class="btn btn-secondary">🎲 Losowo</button>
+            <span class="eyebrow">02 / MOBILIZACJA FLOTY</span><h2 id="setup-title">Gracz 1 - Rozmieść statki</h2>
+            <p class="screen-intro">Wybierz okręt i dotknij miejsca na mapie.</p>
+            <div class="deployment-layout">
+                <div class="ship-selector">
+                    <div class="panel-heading"><span>FLOTA DO ROZMIESZCZENIA</span><span id="deployment-count" aria-live="polite">0 / 5</span></div>
+                    <div class="deployment-progress" aria-hidden="true"><i id="deployment-progress-fill"></i></div>
+                    <div id="ships-to-place" class="ships-list"></div>
+                    <div class="setup-buttons">
+                        <button id="rotate-btn" class="btn btn-secondary">Obróć (poziomo)</button>
+                        <button id="random-btn" class="btn btn-secondary">Losowo</button>
+                    </div>
+                </div>
+                <div class="deployment-map">
+                    <div class="panel-heading"><span>OBSZAR ROZMIESZCZENIA</span><span class="map-live">● AKTYWNY</span></div>
+                    <div class="grid-container"><div id="setup-grid" class="grid"></div></div>
+                    <div class="map-caption"><span id="deployment-feedback" role="status" aria-live="polite">Wybierz okręt z listy powyżej</span><span>⌖</span></div>
                 </div>
             </div>
-            <div class="grid-container">
-                <div id="setup-grid" class="grid"></div>
+            <div class="deployment-actions">
+                <button id="reset-setup" class="btn btn-secondary">Resetuj</button>
+                <button id="confirm-setup" class="btn btn-primary" disabled>Zatwierdź ustawienie</button>
             </div>
-            <button id="confirm-setup" class="btn btn-primary" disabled>Zatwierdź ustawienie</button>
-            <button id="reset-setup" class="btn btn-secondary">Resetuj</button>
         </div>
 
         <!-- Transition Screen -->
         <div id="transition-screen" class="screen">
-            <h2 id="transition-title">Przekaż telefon graczowi 2</h2>
+            <div class="handoff-emblem" aria-hidden="true">⌖</div><span class="eyebrow">PRZEKAZANIE DOWODZENIA</span><h2 id="transition-title">Przekaż telefon graczowi 2</h2>
             <p id="transition-subtitle">Nie podglądaj planszy przeciwnika!</p>
             <button id="continue-btn" class="btn btn-primary">Gotowy</button>
         </div>
 
         <!-- Online Waiting for Opponent Setup -->
         <div id="online-waiting-screen" class="screen">
-            <h2>Oczekiwanie na przeciwnika</h2>
-            <div class="loader"></div>
-            <p>Przeciwnik rozmieszcza statki...</p>
+            <div class="signal-emblem" aria-hidden="true"><i></i><b>⌖</b></div>
+            <span class="eyebrow">TWOJA FLOTA W GOTOWOŚCI</span><h2>Ostatnie przygotowania</h2>
+            <p class="screen-intro">Przeciwnik rozmieszcza swoje okręty.<br>Bitwa rozpocznie się, gdy będzie gotowy.</p>
+            <div class="waiting-pill"><i></i> Oczekiwanie na sygnał</div>
         </div>
 
         <!-- Game Screen -->
         <div id="game-screen" class="screen">
-            <h2 id="game-title">Tura gracza 1</h2>
+            <span class="eyebrow battle-eyebrow">OPERACJA W TOKU / TRYB TAKTYCZNY</span><h2 id="game-title">Tura gracza 1</h2>
             <div id="turn-timer" class="turn-timer" style="display: none;">
                 <span id="timer-value">10</span>s
             </div>
+            <p id="battle-feedback" class="battle-feedback" role="status" aria-live="polite">Dotknij pola na wodach przeciwnika, aby oddać strzał.</p>
             <div class="game-info">
                 <span id="player1-ships">Ty: <span class="ship-count">5</span> statków</span>
                 <span id="player2-ships">Przeciwnik: <span class="ship-count">5</span> statków</span>
             </div>
             <div class="boards-container">
                 <div class="board-section">
-                    <h3>Plansza przeciwnika</h3>
+                    <div class="board-heading"><h3>Wody przeciwnika</h3><span class="target-status">⌖ WYBIERZ CEL</span></div>
                     <div id="enemy-grid" class="grid enemy-grid"></div>
+                    <div class="board-legend"><span><i class="legend-hit"></i> Trafienie</span><span><i class="legend-miss"></i> Pudło</span><span><i class="legend-sunk"></i> Zatopiony</span></div>
                 </div>
-                <div class="board-section own-board">
-                    <h3>Twoja plansza</h3>
+                <details class="board-section own-board" open>
+                    <summary><span>Twoja flota</span><span class="collapse-hint">Pokaż / zwiń</span></summary>
                     <div id="own-grid" class="grid own-grid"></div>
-                </div>
+                    <div class="board-legend"><span><i class="legend-ship"></i> Twoje okręty</span><span><i class="legend-hit"></i> Trafienie</span></div>
+                </details>
             </div>
             <button id="end-turn-btn" class="btn btn-primary" disabled>Zakończ turę</button>
         </div>
@@ -148,7 +169,7 @@
             <div class="victory-banner" aria-hidden="true"><div class="victory-emblem">★</div></div>
             <span class="eyebrow battle-complete">RAPORT KOŃCOWY / BITWA ZAKOŃCZONA</span>
             <h2 id="winner-text">Zwycięstwo!</h2>
-            <p class="victory-caption">Ostatnia salwa. Ocean zna już zwycięzcę.</p>
+            <p id="result-caption" class="victory-caption">Ostatnia salwa. Ocean zna już zwycięzcę.</p>
             <div id="game-stats"></div>
             <div class="gameover-buttons">
                 <button id="play-again-btn" class="btn btn-primary">Zagraj ponownie</button>
