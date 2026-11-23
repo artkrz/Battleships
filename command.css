@@ -214,6 +214,9 @@ body.large-grid .own-board .grid { --cell-size: min(calc((100vw - 100px) / 15 - 
 .room-code-display .code { font-size: clamp(30px,10vw,44px); letter-spacing: 6px; line-height: 1.1; color: #f3ce8a; }
 .share-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
 .share-buttons .btn { min-width: 0; min-height: 48px; font-size: 11px; padding: 10px; }
+.invite-link { display: flex; flex-direction: column; gap: 10px; width: 100%; padding-top: 18px; border-top: 1px solid #879dab22; }
+.invite-link-text { padding: 12px; background: #0b1723; border: 1px solid #6e8ba04d; border-radius: 4px; color: #d7e3ea; font: 12px/1.5 'Courier New',monospace; text-align: center; overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; }
+.invite-link .btn { width: 100%; min-width: 0; min-height: 48px; margin: 0; font-size: 11px; padding: 10px; }
 .qr-section { width: 100%; max-width: 440px; margin: 0; padding: 0 16px; border: 1px solid #7693ac33; border-radius: 5px; background: #14212e; }
 .qr-section summary { display: flex; justify-content: space-between; align-items: center; min-height: 48px; list-style: none; color: #a9becd; cursor: pointer; font-size: 11px; }
 .qr-section summary::-webkit-details-marker { display: none; }
