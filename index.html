@@ -80,6 +80,10 @@
             <div class="signal-emblem" aria-hidden="true"><i></i><b>◎</b></div>
             <span class="eyebrow" data-i18n="waiting.eyebrow">KANAŁ ŁĄCZNOŚCI OTWARTY</span><h2 data-i18n="waiting.title">Zaproś przeciwnika</h2>
             <p class="screen-intro" data-i18n="waiting.intro">Wyślij kod znajomemu. Gdy dołączy, rozmieścicie floty.</p>
+            <details class="qr-section" open>
+                <summary><span data-i18n="waiting.qr">Kod QR do zeskanowania</span> <span aria-hidden="true">⌖</span></summary>
+                <img id="qr-code" data-i18n-attr="alt:waiting.qrAlt" alt="Kod QR z zaproszeniem do tego pokoju">
+            </details>
             <div class="room-code-display">
                 <p class="field-label" data-i18n="waiting.codeLabel">TWÓJ KOD OPERACJI</p>
                 <div id="room-code" class="code"></div>
@@ -88,10 +92,6 @@
                     <button id="share-btn" class="btn btn-secondary btn-small" data-i18n="waiting.share">Udostępnij ↗</button>
                 </div>
             </div>
-            <details class="qr-section" open>
-                <summary><span data-i18n="waiting.qr">Kod QR do zeskanowania</span> <span aria-hidden="true">⌖</span></summary>
-                <img id="qr-code" data-i18n-attr="alt:waiting.qrAlt" alt="Kod QR z zaproszeniem do tego pokoju">
-            </details>
             <div class="loader"></div>
             <p class="waiting-text" data-i18n="waiting.text">Prześlij kod lub link znajomemu...</p>
             <button id="cancel-room-btn" class="btn btn-text" data-i18n="common.cancel">Anuluj</button>
