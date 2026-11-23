@@ -19,7 +19,7 @@ const TRANSLATIONS = {
         'start.eyebrow': 'TAKTYCZNA BITWA MORSKA',
         'start.headline': 'OCEAN NIE<br>WYBACZA<span>.</span>',
         'start.tagline': 'Twoja flota. Twoja taktyka.<br>Zatop przeciwnika, zanim on znajdzie Ciebie.',
-        'start.local': 'Graj na jednym telefonie<small>Przekazuj telefon między turami</small>',
+        'start.local': 'Graj na jednym urządzeniu<small>Gracie na zmianę, bez podglądania</small>',
         'start.online': 'Rzuć wyzwanie online<small>Zaproś znajomego kodem pokoju</small>',
         'start.players': '02 GRACZY',
         'start.boards': '10 × 10 LUB 15 × 15',
@@ -96,9 +96,9 @@ const TRANSLATIONS = {
         'ship.destroyer': 'Niszczyciel{n}',
 
         'transition.eyebrow': 'PRZEKAZANIE DOWODZENIA',
-        'transition.passTo': 'Przekaż telefon graczowi {n}',
+        'transition.passTo': 'Czas na gracza {n}',
         'transition.noPeek': 'Nie podglądaj planszy przeciwnika!',
-        'transition.gameStarts': 'Gra rozpoczyna się! Przekaż telefon graczowi 1',
+        'transition.gameStarts': 'Gra rozpoczyna się! Czas na gracza 1',
         'transition.timeUp': 'Czas minął — tura przepada bez strzału.',
         'transition.ready': 'Gotowy',
 
@@ -172,7 +172,7 @@ const TRANSLATIONS = {
         'start.eyebrow': 'TACTICAL NAVAL BATTLE',
         'start.headline': 'NO MERCY<br>AT SEA<span>.</span>',
         'start.tagline': 'Your fleet. Your tactics.<br>Sink the enemy before they find you.',
-        'start.local': 'Play on one phone<small>Pass the phone between turns</small>',
+        'start.local': 'Play on the same device<small>Take turns, no peeking</small>',
         'start.online': 'Challenge online<small>Invite a friend with a room code</small>',
         'start.players': '02 PLAYERS',
         'start.boards': '10 × 10 OR 15 × 15',
@@ -249,9 +249,9 @@ const TRANSLATIONS = {
         'ship.destroyer': 'Destroyer{n}',
 
         'transition.eyebrow': 'HANDOVER OF COMMAND',
-        'transition.passTo': 'Pass the phone to player {n}',
+        'transition.passTo': "Player {n}, you're up",
         'transition.noPeek': "Don't peek at your opponent's board!",
-        'transition.gameStarts': 'The battle begins! Pass the phone to player 1',
+        'transition.gameStarts': "The battle begins! Player 1, you're up",
         'transition.timeUp': 'Time is up — the turn is lost without a shot.',
         'transition.ready': 'Ready',
 
