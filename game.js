@@ -1,26 +1,32 @@
 // Game Configuration
+// Ship names are translated from the id (see shipLabel).
 const SHIPS_STANDARD = [
-    { name: 'Lotniskowiec', size: 5, id: 'carrier' },
-    { name: 'Pancernik', size: 4, id: 'battleship' },
-    { name: 'Krążownik', size: 3, id: 'cruiser' },
-    { name: 'Łódź podwodna', size: 3, id: 'submarine' },
-    { name: 'Niszczyciel', size: 2, id: 'destroyer' }
+    { size: 5, id: 'carrier' },
+    { size: 4, id: 'battleship' },
+    { size: 3, id: 'cruiser' },
+    { size: 3, id: 'submarine' },
+    { size: 2, id: 'destroyer' }
 ];
 
-// Double ships for 20x20 mode
 // Double ships for 15x15 mode
 const SHIPS_LARGE = [
-    { name: 'Lotniskowiec 1', size: 5, id: 'carrier1' },
-    { name: 'Lotniskowiec 2', size: 5, id: 'carrier2' },
-    { name: 'Pancernik 1', size: 4, id: 'battleship1' },
-    { name: 'Pancernik 2', size: 4, id: 'battleship2' },
-    { name: 'Krążownik 1', size: 3, id: 'cruiser1' },
-    { name: 'Krążownik 2', size: 3, id: 'cruiser2' },
-    { name: 'Łódź podwodna 1', size: 3, id: 'submarine1' },
-    { name: 'Łódź podwodna 2', size: 3, id: 'submarine2' },
-    { name: 'Niszczyciel 1', size: 2, id: 'destroyer1' },
-    { name: 'Niszczyciel 2', size: 2, id: 'destroyer2' }
+    { size: 5, id: 'carrier1' },
+    { size: 5, id: 'carrier2' },
+    { size: 4, id: 'battleship1' },
+    { size: 4, id: 'battleship2' },
+    { size: 3, id: 'cruiser1' },
+    { size: 3, id: 'cruiser2' },
+    { size: 3, id: 'submarine1' },
+    { size: 3, id: 'submarine2' },
+    { size: 2, id: 'destroyer1' },
+    { size: 2, id: 'destroyer2' }
 ];
+
+// Translatable label for a ship id such as 'cruiser2' -> "Krążownik 2" / "Cruiser 2".
+function shipLabel(shipId) {
+    const [, type, number] = shipId.match(/^([a-z]+)(\d*)$/);
+    return { key: `ship.${type}`, params: { n: number ? ` ${number}` : '' } };
+}
 
 // Game options (configurable)
 const gameOptions = {
@@ -95,7 +101,7 @@ async function playSound(type) {
 document.getElementById('sound-toggle').addEventListener('click', event => {
     soundsMuted = !soundsMuted;
     if (soundBus) soundBus.gain.value = soundsMuted ? 0 : 0.5;
-    event.currentTarget.textContent = soundsMuted ? 'Dźwięk: wył.' : 'Dźwięk: wł.';
+    setText(event.currentTarget, soundsMuted ? 'sound.off' : 'sound.on');
     event.currentTarget.setAttribute('aria-pressed', String(soundsMuted));
 });
 document.addEventListener('pointerdown', () => {
@@ -203,7 +209,8 @@ function initializeSocket() {
     });
     
     gameState.socket.on('join-error', (data) => {
-        document.getElementById('lobby-feedback').textContent = data.message;
+        const key = `error.${data.code}`;
+        setText('lobby-feedback', key in TRANSLATIONS.en ? key : 'error.unknown');
     });
     
     gameState.socket.on('opponent-joined', () => {
@@ -258,7 +265,7 @@ function initializeSocket() {
     });
     
     gameState.socket.on('opponent-disconnected', () => {
-        alert('Przeciwnik rozłączył się');
+        alert(t('alert.disconnected'));
         leaveRoom();
         showScreen('start');
     });
@@ -275,7 +282,7 @@ function initializeSocket() {
         } else {
             // Show that opponent wants to play again
             const btn = document.getElementById('play-again-btn');
-            btn.textContent = '✓ Przeciwnik chce rewanżu - kliknij!';
+            setText(btn, 'gameover.rematchReady');
             btn.classList.add('rematch-ready');
         }
     });
@@ -283,7 +290,7 @@ function initializeSocket() {
     gameState.socket.on('rematch-start', (data) => {
         // Both players agreed to rematch
         const btn = document.getElementById('play-again-btn');
-        btn.textContent = 'Zagraj ponownie';
+        setText(btn, 'gameover.playAgain');
         btn.disabled = false;
         btn.classList.remove('rematch-ready');
         
@@ -381,14 +388,31 @@ function createGrid(containerId, isSetup = false, isEnemy = false) {
 function updateDeploymentProgress(count) {
     document.getElementById('deployment-count').textContent = `${count} / ${getShipCount()}`;
     document.getElementById('deployment-progress-fill').style.width = `${count / getShipCount() * 100}%`;
-    document.getElementById('deployment-feedback').textContent = count === getShipCount()
-        ? 'Flota gotowa. Zatwierdź ustawienie.' : 'Wybierz kolejny okręt lub użyj losowego ustawienia.';
+    setText('deployment-feedback', count === getShipCount() ? 'setup.fleetReady' : 'setup.pickNext');
 }
 
 function reportShot(row, col, hit, sunk, incoming = false) {
     const coordinate = `${String.fromCharCode(65 + col)}${row + 1}`;
-    const result = sunk ? 'Okręt zatopiony' : hit ? 'Trafienie' : 'Pudło';
-    document.getElementById('battle-feedback').textContent = `${incoming ? 'Przeciwnik' : 'Twój strzał'} · ${coordinate} · ${result}`;
+    setText('battle-feedback', 'battle.shotReport', {
+        who: { key: incoming ? 'battle.opponent' : 'battle.yourShot' },
+        coord: coordinate,
+        result: { key: sunk ? 'battle.sunk' : hit ? 'game.hit' : 'game.miss' }
+    });
+}
+
+function setRotateLabel() {
+    setText('rotate-btn', 'setup.rotate', { dir: { key: gameState.isHorizontal ? 'setup.horizontal' : 'setup.vertical' } });
+}
+
+function setFleetCount(elementId, label, count) {
+    setHTML(elementId, 'game.fleetCount', { label, count: Number(count) });
+}
+
+function clearText(elementId) {
+    const el = document.getElementById(elementId);
+    delete el.dataset.i18n;
+    delete el.dataset.i18nParams;
+    el.textContent = '';
 }
 
 function createShipButtons() {
@@ -403,7 +427,8 @@ function createShipButtons() {
         btn.setAttribute('aria-pressed', 'false');
         btn.style.setProperty('--ship-icon', `url("assets/ship-${ship.size}.svg")`);
         const name = document.createElement('span');
-        name.textContent = ship.name;
+        const label = shipLabel(ship.id);
+        setText(name, label.key, label.params);
         const size = document.createElement('span');
         size.className = 'ship-size';
         size.textContent = '▪'.repeat(ship.size);
@@ -422,7 +447,7 @@ function selectShip(shipId) {
     if (isPlaced) return;
     
     gameState.selectedShip = getShips().find(s => s.id === shipId);
-    document.getElementById('deployment-feedback').textContent = `${gameState.selectedShip.name}: dotknij mapy, aby rozmieścić okręt.`;
+    setText('deployment-feedback', 'setup.placeShip', { ship: shipLabel(shipId) });
     
     document.querySelectorAll('.ship-btn').forEach(btn => {
         btn.classList.remove('selected');
@@ -453,8 +478,7 @@ function updateShipButtons() {
 // ================== ROTATION ==================
 function toggleRotation() {
     gameState.isHorizontal = !gameState.isHorizontal;
-    document.getElementById('rotate-btn').textContent = 
-        `Obróć (${gameState.isHorizontal ? 'poziomo' : 'pionowo'})`;
+    setRotateLabel();
     clearPreview();
 }
 
@@ -559,7 +583,7 @@ function getShipPartClass(index, totalSize, isHorizontal) {
 
 function handleSetupClick(row, col) {
     if (!gameState.selectedShip) {
-        document.getElementById('deployment-feedback').textContent = 'Najpierw wybierz okręt z listy.';
+        setText('deployment-feedback', 'setup.selectFirst');
         return;
     }
     
@@ -568,7 +592,7 @@ function handleSetupClick(row, col) {
     const ships = gameState.mode === 'online' ? gameState.myShips : gameState.players[gameState.currentPlayer].ships;
     
     if (!canPlaceShipOnBoard(row, col, ship.size, gameState.isHorizontal, board)) {
-        document.getElementById('deployment-feedback').textContent = 'Tu okręt się nie zmieści. Zostaw też odstęp od innych statków.';
+        setText('deployment-feedback', 'setup.noFit');
         return;
     }
     
@@ -592,7 +616,6 @@ function handleSetupClick(row, col) {
     // Record ship placement
     ships.push({
         id: ship.id,
-        name: ship.name,
         size: ship.size,
         cells: cells,
         isHorizontal: isHorizontal,
@@ -665,7 +688,6 @@ function randomPlacement() {
                 
                 ships.push({
                     id: shipTemplate.id,
-                    name: shipTemplate.name,
                     size: shipTemplate.size,
                     cells: cells,
                     isHorizontal: isHorizontal,
@@ -719,10 +741,10 @@ function startLocalGame() {
     gameState.isHorizontal = true;
     
     showScreen('setup');
-    document.getElementById('setup-title').textContent = 'Gracz 1 - Rozmieść statki';
+    setText('setup-title', 'setup.titlePlayer', { n: 1 });
     createGrid('setup-grid', true);
     createShipButtons();
-    document.getElementById('rotate-btn').textContent = 'Obróć (poziomo)';
+    setRotateLabel();
     document.getElementById('confirm-setup').disabled = true;
 }
 
@@ -734,13 +756,13 @@ function confirmSetup() {
     
     if (gameState.currentPlayer === 1) {
         gameState.currentPlayer = 2;
-        document.getElementById('transition-title').textContent = 'Przekaż telefon graczowi 2';
-        document.getElementById('transition-subtitle').textContent = 'Nie podglądaj planszy przeciwnika!';
+        setText('transition-title', 'transition.passTo', { n: 2 });
+        setText('transition-subtitle', 'transition.noPeek');
         showScreen('transition');
     } else {
         gameState.currentPlayer = 1;
-        document.getElementById('transition-title').textContent = 'Gra rozpoczyna się! Przekaż telefon graczowi 1';
-        document.getElementById('transition-subtitle').textContent = '';
+        setText('transition-title', 'transition.gameStarts');
+        clearText('transition-subtitle');
         showScreen('transition');
         gameState.phase = 'game-start';
     }
@@ -751,11 +773,11 @@ function continueGame() {
         startBattle();
     } else if (gameState.currentPlayer === 2 && gameState.phase === 'transition') {
         showScreen('setup');
-        document.getElementById('setup-title').textContent = 'Gracz 2 - Rozmieść statki';
+        setText('setup-title', 'setup.titlePlayer', { n: 2 });
         createGrid('setup-grid', true);
         createShipButtons();
         gameState.isHorizontal = true;
-        document.getElementById('rotate-btn').textContent = 'Obróć (poziomo)';
+        setRotateLabel();
         document.getElementById('confirm-setup').disabled = true;
     } else {
         startBattle();
@@ -764,7 +786,7 @@ function continueGame() {
 
 function startBattle() {
     showScreen('game');
-    document.getElementById('battle-feedback').textContent = 'Wybierz cel na wodach przeciwnika.';
+    setText('battle-feedback', 'game.pickTarget');
     gameState.hasAttacked = false;
     document.getElementById('end-turn-btn').style.display = 'block';
     updateGameUI();
@@ -775,9 +797,9 @@ function updateGameUI() {
     const currentPlayer = gameState.currentPlayer;
     const enemyPlayer = currentPlayer === 1 ? 2 : 1;
     
-    document.getElementById('game-title').textContent = `Tura gracza ${currentPlayer}`;
-    document.getElementById('player1-ships').innerHTML = `Gracz 1: <span class="ship-count">${gameState.players[1].shipsRemaining}</span> statków`;
-    document.getElementById('player2-ships').innerHTML = `Gracz 2: <span class="ship-count">${gameState.players[2].shipsRemaining}</span> statków`;
+    setText('game-title', 'game.turnOf', { n: currentPlayer });
+    setFleetCount('player1-ships', { key: 'game.player', params: { n: 1 } }, gameState.players[1].shipsRemaining);
+    setFleetCount('player2-ships', { key: 'game.player', params: { n: 2 } }, gameState.players[2].shipsRemaining);
     
     renderEnemyGrid(enemyPlayer);
     renderOwnGrid(currentPlayer);
@@ -938,7 +960,7 @@ function handleTimerExpired() {
         updateOnlineGameUI();
     } else {
         endTurn();
-        document.getElementById('transition-subtitle').textContent = 'Czas minął — tura przepada bez strzału.';
+        setText('transition-subtitle', 'transition.timeUp');
     }
 }
 
@@ -1049,8 +1071,8 @@ function endTurn() {
     gameState.currentPlayer = nextPlayer;
     gameState.hasAttacked = false;
     
-    document.getElementById('transition-title').textContent = `Przekaż telefon graczowi ${nextPlayer}`;
-    document.getElementById('transition-subtitle').textContent = 'Nie podglądaj planszy przeciwnika!';
+    setText('transition-title', 'transition.passTo', { n: nextPlayer });
+    setText('transition-subtitle', 'transition.noPeek');
     showScreen('transition');
     gameState.phase = 'battle-transition';
 }
@@ -1062,15 +1084,15 @@ function endGame(winner) {
     if (gameState.mode === 'online') {
         const isWinner = (winner === 'host' && gameState.playerRole === 'host') || 
                          (winner === 'guest' && gameState.playerRole === 'guest');
-        document.getElementById('winner-text').textContent = isWinner ? 'Zwycięstwo!' : 'Flota pokonana';
+        setText('winner-text', isWinner ? 'gameover.victory' : 'gameover.defeat');
         playSound(isWinner ? 'win' : 'lose');
     } else {
-        document.getElementById('winner-text').textContent = `Gracz ${winner} zwycięża`;
+        setText('winner-text', 'gameover.playerWins', { n: winner });
         playSound('win');
     }
     
     const lost = gameState.mode === 'online' && !((winner === 'host' && gameState.playerRole === 'host') || (winner === 'guest' && gameState.playerRole === 'guest'));
-    document.getElementById('result-caption').textContent = lost ? 'Flota stracona. Następna operacja może należeć do Ciebie.' : 'Misja zakończona. Przewaga na oceanie należy do Ciebie.';
+    setText('result-caption', lost ? 'gameover.captionLost' : 'gameover.captionWon');
     document.getElementById('gameover-screen').classList.toggle('defeat', gameState.mode === 'online' && !((winner === 'host' && gameState.playerRole === 'host') || (winner === 'guest' && gameState.playerRole === 'guest')));
     const stats = document.getElementById('game-stats');
     
@@ -1081,12 +1103,12 @@ function endGame(winner) {
         const shots = gameState.myStats?.shots || 0;
         const hits = gameState.myStats?.hits || 0;
         const accuracy = shots ? Math.round(hits / shots * 100) : 0;
-        stats.innerHTML = `<div class="series-score"><span>WYNIK POJEDYNKU</span><strong>${myWins} <small>:</small> ${opponentWins}</strong><div>Ty <span>Przeciwnik</span></div></div>
-            <article class="result-card ${lost ? '' : 'result-winner'}"><div class="result-player"><span>Twoja flota</span><span class="result-rank">${lost ? 'POKONANA' : 'ZWYCIĘSKA'}</span></div>
-            <div class="result-metrics"><div><strong>${shots}</strong><span>Strzały</span></div><div><strong>${hits}</strong><span>Trafienia</span></div><div><strong>${accuracy}<small>%</small></strong><span>Celność</span></div></div>
+        stats.innerHTML = `<div class="series-score">${i18nSpan('gameover.series')}<strong>${myWins} <small>:</small> ${opponentWins}</strong><div>${i18nSpan('game.you')} ${i18nSpan('game.opponent')}</div></div>
+            <article class="result-card ${lost ? '' : 'result-winner'}"><div class="result-player">${i18nSpan('game.yourFleet')}${i18nSpan(lost ? 'gameover.fleetDefeated' : 'gameover.fleetVictorious', null, 'result-rank')}</div>
+            <div class="result-metrics"><div><strong>${shots}</strong>${i18nSpan('gameover.shots')}</div><div><strong>${hits}</strong>${i18nSpan('gameover.hits')}</div><div><strong>${accuracy}<small>%</small></strong>${i18nSpan('gameover.accuracy')}</div></div>
             <div class="accuracy-track" aria-hidden="true"><i style="width:${accuracy}%"></i></div></article>`;
         // Show rematch buttons for online mode
-        document.getElementById('play-again-btn').textContent = 'Zagraj ponownie';
+        setText('play-again-btn', 'gameover.playAgain');
         document.getElementById('leave-game-btn').style.display = 'inline-block';
         gameState.waitingForRematch = false;
     } else {
@@ -1095,8 +1117,8 @@ function endGame(winner) {
         stats.innerHTML = [p1, p2].map((player, index) => {
             const accuracy = player.shots ? Math.round(player.hits / player.shots * 100) : 0;
             return `<article class="result-card ${winner === index + 1 ? 'result-winner' : ''}">
-                <div class="result-player"><span>Gracz ${index + 1}</span><span class="result-rank">${winner === index + 1 ? 'ZWYCIĘZCA' : 'POKONANY'}</span></div>
-                <div class="result-metrics"><div><strong>${player.shots}</strong><span>Strzały</span></div><div><strong>${player.hits}</strong><span>Trafienia</span></div><div><strong>${accuracy}<small>%</small></strong><span>Celność</span></div></div>
+                <div class="result-player">${i18nSpan('game.player', { n: index + 1 })}${i18nSpan(winner === index + 1 ? 'gameover.winner' : 'gameover.loser', null, 'result-rank')}</div>
+                <div class="result-metrics"><div><strong>${player.shots}</strong>${i18nSpan('gameover.shots')}</div><div><strong>${player.hits}</strong>${i18nSpan('gameover.hits')}</div><div><strong>${accuracy}<small>%</small></strong>${i18nSpan('gameover.accuracy')}</div></div>
                 <div class="accuracy-track" aria-hidden="true"><i style="width:${accuracy}%"></i></div>
             </article>`;
         }).join('');
@@ -1113,7 +1135,7 @@ function playAgain() {
         
         // Update button to show waiting state
         const btn = document.getElementById('play-again-btn');
-        btn.textContent = 'Oczekiwanie na przeciwnika...';
+        setText(btn, 'gameover.waitingRematch');
         btn.disabled = true;
     } else {
         // Local mode - just go back to start
@@ -1139,7 +1161,7 @@ function createRoom() {
 function joinRoom() {
     const code = document.getElementById('room-code-input').value.trim().toUpperCase();
     if (code.length !== 6) {
-        document.getElementById('lobby-feedback').textContent = 'Wpisz pełny, sześcioznakowy kod pokoju.';
+        setText('lobby-feedback', 'lobby.codeIncomplete');
         document.getElementById('room-code-input').focus();
         return;
     }
@@ -1186,18 +1208,18 @@ function fallbackCopy(text, btn) {
 }
 
 function showCopySuccess(btn) {
-    btn.textContent = '✓ Skopiowano!';
+    setText(btn, btn.id === 'share-btn' ? 'waiting.linkCopied' : 'waiting.copied');
     btn.classList.add('copy-success');
     setTimeout(() => {
-        btn.textContent = '📋 Kopiuj kod';
+        setText(btn, btn.id === 'share-btn' ? 'waiting.share' : 'waiting.copy');
         btn.classList.remove('copy-success');
     }, 2000);
 }
 
 function showCopyError(btn) {
-    btn.textContent = '✗ Błąd';
+    setText(btn, 'waiting.copyError');
     setTimeout(() => {
-        btn.textContent = '📋 Kopiuj kod';
+        setText(btn, btn.id === 'share-btn' ? 'waiting.share' : 'waiting.copy');
     }, 2000);
 }
 
@@ -1216,8 +1238,8 @@ function shareRoom() {
     const code = document.getElementById('room-code').textContent;
     const joinUrl = `${window.location.origin}?join=${code}`;
     const shareData = {
-        title: 'Statki - Dołącz do gry!',
-        text: `Dołącz do mojej gry w Statki! Kod pokoju: ${code}`,
+        title: t('share.title'),
+        text: t('share.text', { code }),
         url: joinUrl
     };
     
@@ -1234,9 +1256,9 @@ function shareRoom() {
         const btn = document.getElementById('share-btn');
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(joinUrl).then(() => {
-                btn.textContent = '✓ Link skopiowany!';
+                setText(btn, 'waiting.linkCopied');
                 setTimeout(() => {
-                    btn.textContent = '📤 Udostępnij';
+                    setText(btn, 'waiting.share');
                 }, 2000);
             });
         } else {
@@ -1269,10 +1291,10 @@ function startOnlineSetup() {
     gameState.myStats = { shots: 0, hits: 0 };
     
     showScreen('setup');
-    document.getElementById('setup-title').textContent = 'Rozmieść swoje statki';
+    setText('setup-title', 'setup.titleOnline');
     createGrid('setup-grid', true);
     createShipButtons();
-    document.getElementById('rotate-btn').textContent = 'Obróć (poziomo)';
+    setRotateLabel();
     document.getElementById('confirm-setup').disabled = true;
 }
 
@@ -1288,7 +1310,7 @@ function confirmOnlineSetup() {
 
 function startOnlineBattle() {
     showScreen('game');
-    document.getElementById('battle-feedback').textContent = gameState.isMyTurn ? 'Wybierz cel na wodach przeciwnika.' : 'Poczekaj na strzał przeciwnika.';
+    setText('battle-feedback', gameState.isMyTurn ? 'game.pickTarget' : 'game.waitForEnemy');
     document.getElementById('end-turn-btn').style.display = 'none';
     updateOnlineGameUI();
 }
@@ -1296,15 +1318,15 @@ function startOnlineBattle() {
 function updateOnlineGameUI() {
     const titleEl = document.getElementById('game-title');
     if (gameState.isMyTurn) {
-        titleEl.textContent = 'Twoja tura - strzelaj!';
+        setText(titleEl, 'game.yourTurn');
         titleEl.className = 'your-turn';
     } else {
-        titleEl.textContent = 'Tura przeciwnika...';
+        setText(titleEl, 'game.enemyTurn');
         titleEl.className = 'enemy-turn';
     }
     
-    document.getElementById('player1-ships').innerHTML = `Ty: <span class="ship-count">${getShipCount() - countSunkShips(gameState.myShips)}</span> statków`;
-    document.getElementById('player2-ships').innerHTML = `Przeciwnik: <span class="ship-count">${gameState.enemyShipsRemaining ?? getShipCount()}</span> statków`;
+    setFleetCount('player1-ships', { key: 'game.you' }, getShipCount() - countSunkShips(gameState.myShips));
+    setFleetCount('player2-ships', { key: 'game.opponent' }, gameState.enemyShipsRemaining ?? getShipCount());
     
     renderOnlineEnemyGrid();
     renderOnlineOwnGrid();

@@ -19,6 +19,12 @@ body::before { background-image: linear-gradient(#abc7d604 1px, transparent 1px)
 .brand-edition { display: none; }
 .sound-toggle { min-height: 44px; min-width: 80px; background: #14202b; border-color: #6f879b33; color: #a5b8c5; }
 .masthead-status { display: none; }
+.lang-switch { margin-left: auto; display: flex; flex: 0 0 auto; border: 1px solid #6f879b33; border-radius: 5px; overflow: hidden; background: #14202b; }
+.lang-switch button { min-height: 44px; min-width: 38px; padding: 0 8px; border: 0; background: transparent; color: #7f95a5; font: 600 11px/1 'Courier New', monospace; letter-spacing: 1px; cursor: pointer; }
+.lang-switch button[aria-pressed="true"] { background: #23384a; color: #f1d295; }
+.lang-switch button:focus-visible { outline: 2px solid #f3c97f; outline-offset: -2px; }
+.lang-switch + .sound-toggle { margin-left: 0; }
+@media (max-width: 359px) { .brand [data-i18n="brand.name"] { display: none; } }
 .eyebrow, .panel-heading, .map-caption, .target-status, .board-legend, .hero-footer { font-family: 'Courier New',monospace; }
 .eyebrow { color: #d6b67c; font-size: 9px; letter-spacing: 2px; }
 .screen:not(#start-screen) { max-width: 1080px; gap: 14px; }

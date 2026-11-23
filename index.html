@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Statki - Gra dla dwóch graczy</title>
+    <title data-i18n="meta.title">Statki - Gra dla dwóch graczy</title>
     <meta name="theme-color" content="#080f17">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="command.css">
@@ -12,172 +12,173 @@
 </head>
 <body>
     <div id="app">
-        <header class="masthead"><a href="/" class="brand" aria-label="Statki — menu główne"><span class="brand-symbol" aria-hidden="true">⚓</span> STATKI<span class="brand-edition"> / DOWÓDZTWO FLOTY</span></a><button id="sound-toggle" class="sound-toggle" aria-pressed="false">Dźwięk: wł.</button><span class="masthead-status"><i></i> FLOTA W GOTOWOŚCI</span></header>
+        <header class="masthead"><a href="/" class="brand" aria-label="Statki — menu główne" data-i18n-attr="aria-label:brand.aria"><span class="brand-symbol" aria-hidden="true">⚓</span> <span data-i18n="brand.name">STATKI</span><span class="brand-edition" data-i18n="brand.edition"> / DOWÓDZTWO FLOTY</span></a><div class="lang-switch" role="group" aria-label="Język" data-i18n-attr="aria-label:lang.label"><button type="button" data-lang="pl" lang="pl" aria-pressed="false">PL</button><button type="button" data-lang="en" lang="en" aria-pressed="false">EN</button></div><button id="sound-toggle" class="sound-toggle" aria-pressed="false" data-i18n="sound.on">Dźwięk: wł.</button><span class="masthead-status"><i></i> <span data-i18n="masthead.status">FLOTA W GOTOWOŚCI</span></span></header>
         <!-- Start Screen -->
         <div id="start-screen" class="screen active">
-            <div class="hero-art" aria-hidden="true"><img src="assets/naval-command.jpg" alt=""><span class="art-tag">OPERACJA 01 / MORZE PÓŁNOCNE</span></div>
-            <div class="hero-copy"><span class="eyebrow">TAKTYCZNA BITWA MORSKA</span>
-            <h1>OCEAN NIE<br>WYBACZA<span>.</span></h1>
-            <p>Twoja flota. Twoja taktyka.<br>Zatop przeciwnika, zanim on znajdzie Ciebie.</p></div>
+            <div class="hero-art" aria-hidden="true"><img src="assets/naval-command.jpg" alt=""><span class="art-tag" data-i18n="start.artTag">OPERACJA 01 / MORZE PÓŁNOCNE</span></div>
+            <div class="hero-copy"><span class="eyebrow" data-i18n="start.eyebrow">TAKTYCZNA BITWA MORSKA</span>
+            <h1 data-i18n-html="start.headline">OCEAN NIE<br>WYBACZA<span>.</span></h1>
+            <p data-i18n-html="start.tagline">Twoja flota. Twoja taktyka.<br>Zatop przeciwnika, zanim on znajdzie Ciebie.</p></div>
             <div class="mode-buttons">
-                <button id="local-btn" class="btn btn-primary"><span class="mode-icon" aria-hidden="true">⌖</span><span>Graj na jednym telefonie<small>Przekazuj telefon między turami</small></span><span aria-hidden="true">↗</span></button>
-                <button id="online-btn" class="btn btn-secondary"><span class="mode-icon" aria-hidden="true">◎</span><span>Rzuć wyzwanie online<small>Zaproś znajomego kodem pokoju</small></span><span aria-hidden="true">↗</span></button>
+                <button id="local-btn" class="btn btn-primary"><span class="mode-icon" aria-hidden="true">⌖</span><span data-i18n-html="start.local">Graj na jednym telefonie<small>Przekazuj telefon między turami</small></span><span aria-hidden="true">↗</span></button>
+                <button id="online-btn" class="btn btn-secondary"><span class="mode-icon" aria-hidden="true">◎</span><span data-i18n-html="start.online">Rzuć wyzwanie online<small>Zaproś znajomego kodem pokoju</small></span><span aria-hidden="true">↗</span></button>
             </div>
-            <div class="hero-footer"><span>02 GRACZY</span><span>10 × 10 LUB 15 × 15</span><span>TWÓJ RUCH. TWOJA TAKTYKA.</span></div>
+            <div class="hero-footer"><span data-i18n="start.players">02 GRACZY</span><span data-i18n="start.boards">10 × 10 LUB 15 × 15</span><span data-i18n="start.motto">TWÓJ RUCH. TWOJA TAKTYKA.</span></div>
         </div>
 
         <!-- Game Options Screen -->
         <div id="options-screen" class="screen">
-            <span class="eyebrow">01 / PRZYGOTOWANIE OPERACJI</span><h2>Zasady starcia</h2><p class="screen-intro">Ustal warunki. Reszta zależy od Twojej taktyki.</p>
+            <span class="eyebrow" data-i18n="options.eyebrow">01 / PRZYGOTOWANIE OPERACJI</span><h2 data-i18n="options.title">Zasady starcia</h2><p class="screen-intro" data-i18n="options.intro">Ustal warunki. Reszta zależy od Twojej taktyki.</p>
             <div class="options-container">
                 <div class="option-group">
-                    <label>Rozmiar planszy:</label>
+                    <label data-i18n="options.boardSize">Rozmiar planszy:</label>
                     <div class="option-buttons">
-                        <button class="option-btn active" data-size="10">10x10 (klasyczna)</button>
-                        <button class="option-btn" data-size="15">15x15 (duża)</button>
+                        <button class="option-btn active" data-size="10" data-i18n="options.classic">10x10 (klasyczna)</button>
+                        <button class="option-btn" data-size="15" data-i18n="options.large">15x15 (duża)</button>
                     </div>
                 </div>
                 <div class="option-group">
-                    <label>Dodatkowy strzał po trafieniu:</label>
+                    <label data-i18n="options.shootAgain">Dodatkowy strzał po trafieniu:</label>
                     <div class="option-buttons">
-                        <button class="option-btn" data-shoot-again="false">Wyłączone</button>
-                        <button class="option-btn active" data-shoot-again="true">Włączone</button>
+                        <button class="option-btn" data-shoot-again="false" data-i18n="options.off">Wyłączone</button>
+                        <button class="option-btn active" data-shoot-again="true" data-i18n="options.on">Włączone</button>
                     </div>
                 </div>
                 <div class="option-group">
-                    <label>Limit czasu na turę:</label>
+                    <label data-i18n="options.timer">Limit czasu na turę:</label>
                     <div class="option-buttons">
-                        <button class="option-btn active" data-timer="0">Brak limitu</button>
-                        <button class="option-btn" data-timer="10">10 sekund</button>
-                        <button class="option-btn" data-timer="30">30 sekund</button>
+                        <button class="option-btn active" data-timer="0" data-i18n="options.noLimit">Brak limitu</button>
+                        <button class="option-btn" data-timer="10" data-i18n="options.seconds" data-i18n-params='{"n":10}'>10 sekund</button>
+                        <button class="option-btn" data-timer="30" data-i18n="options.seconds" data-i18n-params='{"n":30}'>30 sekund</button>
                     </div>
                 </div>
             </div>
-            <button id="start-game-btn" class="btn btn-primary">Rozpocznij grę</button>
-            <button id="back-from-options" class="btn btn-text">← Powrót</button>
+            <button id="start-game-btn" class="btn btn-primary" data-i18n="options.start">Rozpocznij grę</button>
+            <button id="back-from-options" class="btn btn-text" data-i18n="common.back">← Powrót</button>
         </div>
 
         <!-- Online Lobby Screen -->
         <div id="lobby-screen" class="screen">
             <div class="signal-emblem" aria-hidden="true"><i></i><b>◎</b></div>
-            <span class="eyebrow">ŁĄCZNOŚĆ MIĘDZY FLOTAMI</span><h2>Rzuć wyzwanie</h2>
-            <p class="screen-intro">Dwa telefony. Jeden ocean. Zaproś znajomego do bitwy.</p>
+            <span class="eyebrow" data-i18n="lobby.eyebrow">ŁĄCZNOŚĆ MIĘDZY FLOTAMI</span><h2 data-i18n="lobby.title">Rzuć wyzwanie</h2>
+            <p class="screen-intro" data-i18n="lobby.intro">Dwa telefony. Jeden ocean. Zaproś znajomego do bitwy.</p>
             <div class="lobby-options">
-                <button id="create-room-btn" class="btn btn-primary">Utwórz nowy pokój ↗</button>
-                <div class="divider">lub</div>
+                <button id="create-room-btn" class="btn btn-primary" data-i18n="lobby.create">Utwórz nowy pokój ↗</button>
+                <div class="divider" data-i18n="lobby.or">lub</div>
                 <div class="join-room">
-                    <label for="room-code-input" class="field-label">MASZ JUŻ ZAPROSZENIE?</label>
+                    <label for="room-code-input" class="field-label" data-i18n="lobby.haveInvite">MASZ JUŻ ZAPROSZENIE?</label>
                     <input type="text" id="room-code-input" placeholder="ABC123" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="lobby-feedback">
-                    <button id="join-room-btn" class="btn btn-primary">Dołącz do pokoju</button>
+                    <button id="join-room-btn" class="btn btn-primary" data-i18n="lobby.join">Dołącz do pokoju</button>
                 </div>
             </div>
-            <p id="lobby-feedback" class="inline-feedback" role="status" aria-live="polite">Kod pokoju znajdziesz u osoby, która go utworzyła.</p>
-            <button id="back-to-menu" class="btn btn-text">← Powrót</button>
+            <p id="lobby-feedback" class="inline-feedback" role="status" aria-live="polite" data-i18n="lobby.hint">Kod pokoju znajdziesz u osoby, która go utworzyła.</p>
+            <button id="back-to-menu" class="btn btn-text" data-i18n="common.back">← Powrót</button>
         </div>
 
         <!-- Waiting Room Screen -->
         <div id="waiting-screen" class="screen">
             <div class="signal-emblem" aria-hidden="true"><i></i><b>◎</b></div>
-            <span class="eyebrow">KANAŁ ŁĄCZNOŚCI OTWARTY</span><h2>Zaproś przeciwnika</h2>
-            <p class="screen-intro">Wyślij kod znajomemu. Gdy dołączy, rozmieścicie floty.</p>
+            <span class="eyebrow" data-i18n="waiting.eyebrow">KANAŁ ŁĄCZNOŚCI OTWARTY</span><h2 data-i18n="waiting.title">Zaproś przeciwnika</h2>
+            <p class="screen-intro" data-i18n="waiting.intro">Wyślij kod znajomemu. Gdy dołączy, rozmieścicie floty.</p>
             <div class="room-code-display">
-                <p class="field-label">TWÓJ KOD OPERACJI</p>
+                <p class="field-label" data-i18n="waiting.codeLabel">TWÓJ KOD OPERACJI</p>
                 <div id="room-code" class="code"></div>
                 <div class="share-buttons">
-                    <button id="copy-code-btn" class="btn btn-secondary btn-small">Kopiuj kod</button>
-                    <button id="share-btn" class="btn btn-secondary btn-small">Udostępnij ↗</button>
+                    <button id="copy-code-btn" class="btn btn-secondary btn-small" data-i18n="waiting.copy">Kopiuj kod</button>
+                    <button id="share-btn" class="btn btn-secondary btn-small" data-i18n="waiting.share">Udostępnij ↗</button>
                 </div>
             </div>
             <details class="qr-section" open>
-                <summary>Kod QR do zeskanowania <span aria-hidden="true">⌖</span></summary>
-                <img id="qr-code" alt="Kod QR z zaproszeniem do tego pokoju">
+                <summary><span data-i18n="waiting.qr">Kod QR do zeskanowania</span> <span aria-hidden="true">⌖</span></summary>
+                <img id="qr-code" data-i18n-attr="alt:waiting.qrAlt" alt="Kod QR z zaproszeniem do tego pokoju">
             </details>
             <div class="loader"></div>
-            <p class="waiting-text">Prześlij kod lub link znajomemu...</p>
-            <button id="cancel-room-btn" class="btn btn-text">Anuluj</button>
+            <p class="waiting-text" data-i18n="waiting.text">Prześlij kod lub link znajomemu...</p>
+            <button id="cancel-room-btn" class="btn btn-text" data-i18n="common.cancel">Anuluj</button>
         </div>
 
         <!-- Setup Screen -->
         <div id="setup-screen" class="screen">
-            <span class="eyebrow">02 / MOBILIZACJA FLOTY</span><h2 id="setup-title">Gracz 1 - Rozmieść statki</h2>
-            <p class="screen-intro">Wybierz okręt i dotknij miejsca na mapie.</p>
+            <span class="eyebrow" data-i18n="setup.eyebrow">02 / MOBILIZACJA FLOTY</span><h2 id="setup-title" data-i18n="setup.titlePlayer" data-i18n-params='{"n":1}'>Gracz 1 - Rozmieść statki</h2>
+            <p class="screen-intro" data-i18n="setup.intro">Wybierz okręt i dotknij miejsca na mapie.</p>
             <div class="deployment-layout">
                 <div class="ship-selector">
-                    <div class="panel-heading"><span>FLOTA DO ROZMIESZCZENIA</span><span id="deployment-count" aria-live="polite">0 / 5</span></div>
+                    <div class="panel-heading"><span data-i18n="setup.fleetHeading">FLOTA DO ROZMIESZCZENIA</span><span id="deployment-count" aria-live="polite">0 / 5</span></div>
                     <div class="deployment-progress" aria-hidden="true"><i id="deployment-progress-fill"></i></div>
                     <div id="ships-to-place" class="ships-list"></div>
                     <div class="setup-buttons">
-                        <button id="rotate-btn" class="btn btn-secondary">Obróć (poziomo)</button>
-                        <button id="random-btn" class="btn btn-secondary">Losowo</button>
+                        <button id="rotate-btn" class="btn btn-secondary" data-i18n="setup.rotate" data-i18n-params='{"dir":{"key":"setup.horizontal"}}'>Obróć (poziomo)</button>
+                        <button id="random-btn" class="btn btn-secondary" data-i18n="setup.random">Losowo</button>
                     </div>
                 </div>
                 <div class="deployment-map">
-                    <div class="panel-heading"><span>OBSZAR ROZMIESZCZENIA</span><span class="map-live">● AKTYWNY</span></div>
+                    <div class="panel-heading"><span data-i18n="setup.mapHeading">OBSZAR ROZMIESZCZENIA</span><span class="map-live" data-i18n="setup.active">● AKTYWNY</span></div>
                     <div class="grid-container"><div id="setup-grid" class="grid"></div></div>
-                    <div class="map-caption"><span id="deployment-feedback" role="status" aria-live="polite">Wybierz okręt z listy powyżej</span><span>⌖</span></div>
+                    <div class="map-caption"><span id="deployment-feedback" role="status" aria-live="polite" data-i18n="setup.pickFromList">Wybierz okręt z listy powyżej</span><span>⌖</span></div>
                 </div>
             </div>
             <div class="deployment-actions">
-                <button id="reset-setup" class="btn btn-secondary">Resetuj</button>
-                <button id="confirm-setup" class="btn btn-primary" disabled>Zatwierdź ustawienie</button>
+                <button id="reset-setup" class="btn btn-secondary" data-i18n="setup.reset">Resetuj</button>
+                <button id="confirm-setup" class="btn btn-primary" disabled data-i18n="setup.confirm">Zatwierdź ustawienie</button>
             </div>
         </div>
 
         <!-- Transition Screen -->
         <div id="transition-screen" class="screen">
-            <div class="handoff-emblem" aria-hidden="true">⌖</div><span class="eyebrow">PRZEKAZANIE DOWODZENIA</span><h2 id="transition-title">Przekaż telefon graczowi 2</h2>
-            <p id="transition-subtitle">Nie podglądaj planszy przeciwnika!</p>
-            <button id="continue-btn" class="btn btn-primary">Gotowy</button>
+            <div class="handoff-emblem" aria-hidden="true">⌖</div><span class="eyebrow" data-i18n="transition.eyebrow">PRZEKAZANIE DOWODZENIA</span><h2 id="transition-title" data-i18n="transition.passTo" data-i18n-params='{"n":2}'>Przekaż telefon graczowi 2</h2>
+            <p id="transition-subtitle" data-i18n="transition.noPeek">Nie podglądaj planszy przeciwnika!</p>
+            <button id="continue-btn" class="btn btn-primary" data-i18n="transition.ready">Gotowy</button>
         </div>
 
         <!-- Online Waiting for Opponent Setup -->
         <div id="online-waiting-screen" class="screen">
             <div class="signal-emblem" aria-hidden="true"><i></i><b>⌖</b></div>
-            <span class="eyebrow">TWOJA FLOTA W GOTOWOŚCI</span><h2>Ostatnie przygotowania</h2>
-            <p class="screen-intro">Przeciwnik rozmieszcza swoje okręty.<br>Bitwa rozpocznie się, gdy będzie gotowy.</p>
-            <div class="waiting-pill"><i></i> Oczekiwanie na sygnał</div>
+            <span class="eyebrow" data-i18n="onlineWaiting.eyebrow">TWOJA FLOTA W GOTOWOŚCI</span><h2 data-i18n="onlineWaiting.title">Ostatnie przygotowania</h2>
+            <p class="screen-intro" data-i18n-html="onlineWaiting.intro">Przeciwnik rozmieszcza swoje okręty.<br>Bitwa rozpocznie się, gdy będzie gotowy.</p>
+            <div class="waiting-pill"><i></i> <span data-i18n="onlineWaiting.pill">Oczekiwanie na sygnał</span></div>
         </div>
 
         <!-- Game Screen -->
         <div id="game-screen" class="screen">
-            <span class="eyebrow battle-eyebrow">OPERACJA W TOKU / TRYB TAKTYCZNY</span><h2 id="game-title">Tura gracza 1</h2>
+            <span class="eyebrow battle-eyebrow" data-i18n="game.eyebrow">OPERACJA W TOKU / TRYB TAKTYCZNY</span><h2 id="game-title" data-i18n="game.turnOf" data-i18n-params='{"n":1}'>Tura gracza 1</h2>
             <div id="turn-timer" class="turn-timer" style="display: none;">
                 <span id="timer-value">10</span>s
             </div>
-            <p id="battle-feedback" class="battle-feedback" role="status" aria-live="polite">Dotknij pola na wodach przeciwnika, aby oddać strzał.</p>
+            <p id="battle-feedback" class="battle-feedback" role="status" aria-live="polite" data-i18n="game.tapToFire">Dotknij pola na wodach przeciwnika, aby oddać strzał.</p>
             <div class="game-info">
-                <span id="player1-ships">Ty: <span class="ship-count">5</span> statków</span>
-                <span id="player2-ships">Przeciwnik: <span class="ship-count">5</span> statków</span>
+                <span id="player1-ships" data-i18n-html="game.fleetCount" data-i18n-params='{"label":{"key":"game.you"},"count":5}'>Ty: <span class="ship-count">5</span> statków</span>
+                <span id="player2-ships" data-i18n-html="game.fleetCount" data-i18n-params='{"label":{"key":"game.opponent"},"count":5}'>Przeciwnik: <span class="ship-count">5</span> statków</span>
             </div>
             <div class="boards-container">
                 <div class="board-section">
-                    <div class="board-heading"><h3>Wody przeciwnika</h3><span class="target-status">⌖ WYBIERZ CEL</span></div>
+                    <div class="board-heading"><h3 data-i18n="game.enemyWaters">Wody przeciwnika</h3><span class="target-status" data-i18n="game.selectTarget">⌖ WYBIERZ CEL</span></div>
                     <div id="enemy-grid" class="grid enemy-grid"></div>
-                    <div class="board-legend"><span><i class="legend-hit"></i> Trafienie</span><span><i class="legend-miss"></i> Pudło</span><span><i class="legend-sunk"></i> Zatopiony</span></div>
+                    <div class="board-legend"><span><i class="legend-hit"></i> <span data-i18n="game.hit">Trafienie</span></span><span><i class="legend-miss"></i> <span data-i18n="game.miss">Pudło</span></span><span><i class="legend-sunk"></i> <span data-i18n="game.sunk">Zatopiony</span></span></div>
                 </div>
                 <details class="board-section own-board" open>
-                    <summary><span>Twoja flota</span><span class="collapse-hint">Pokaż / zwiń</span></summary>
+                    <summary><span data-i18n="game.yourFleet">Twoja flota</span><span class="collapse-hint" data-i18n="game.toggle">Pokaż / zwiń</span></summary>
                     <div id="own-grid" class="grid own-grid"></div>
-                    <div class="board-legend"><span><i class="legend-ship"></i> Twoje okręty</span><span><i class="legend-hit"></i> Trafienie</span></div>
+                    <div class="board-legend"><span><i class="legend-ship"></i> <span data-i18n="game.yourShips">Twoje okręty</span></span><span><i class="legend-hit"></i> <span data-i18n="game.hit">Trafienie</span></span></div>
                 </details>
             </div>
-            <button id="end-turn-btn" class="btn btn-primary" disabled>Zakończ turę</button>
+            <button id="end-turn-btn" class="btn btn-primary" disabled data-i18n="game.endTurn">Zakończ turę</button>
         </div>
 
         <!-- Game Over Screen -->
         <div id="gameover-screen" class="screen">
             <div class="victory-banner" aria-hidden="true"><div class="victory-emblem">★</div></div>
-            <span class="eyebrow battle-complete">RAPORT KOŃCOWY / BITWA ZAKOŃCZONA</span>
-            <h2 id="winner-text">Zwycięstwo!</h2>
-            <p id="result-caption" class="victory-caption">Ostatnia salwa. Ocean zna już zwycięzcę.</p>
+            <span class="eyebrow battle-complete" data-i18n="gameover.eyebrow">RAPORT KOŃCOWY / BITWA ZAKOŃCZONA</span>
+            <h2 id="winner-text" data-i18n="gameover.victory">Zwycięstwo!</h2>
+            <p id="result-caption" class="victory-caption" data-i18n="gameover.captionDefault">Ostatnia salwa. Ocean zna już zwycięzcę.</p>
             <div id="game-stats"></div>
             <div class="gameover-buttons">
-                <button id="play-again-btn" class="btn btn-primary">Zagraj ponownie</button>
-                <button id="leave-game-btn" class="btn btn-secondary" style="display: none;">Wyjdź do menu</button>
+                <button id="play-again-btn" class="btn btn-primary" data-i18n="gameover.playAgain">Zagraj ponownie</button>
+                <button id="leave-game-btn" class="btn btn-secondary" style="display: none;" data-i18n="gameover.leave">Wyjdź do menu</button>
             </div>
         </div>
     </div>
 
+    <script src="i18n.js"></script>
     <script src="game.js"></script>
 </body>
 </html>

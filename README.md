@@ -17,6 +17,7 @@ Production is hosted on Render and deploys automatically when a pull request is 
 - **Responsive design** - Optimized for mobile devices
 - **Ship visualization** - Ships display with bow, body, and stern sections
 - **Rematch system** - Play again in the same room with score tracking
+- **Polish and English** - Language is detected from the browser (Polish for `pl*` locales, English otherwise) and can be switched with the PL / EN picker in the header; the choice is remembered on the device
 
 ## How to Play
 
@@ -42,6 +43,12 @@ docker compose down
 
 Then open http://localhost:3000 in your browser.
 
+Run the tests with `npm test`.
+
+## Translations
+
+All UI text lives in `i18n.js` (`pl` and `en` dictionaries). Static markup uses `data-i18n` / `data-i18n-html` / `data-i18n-attr` attributes; dynamic text is set with `setText(element, key, params)` so it re-renders when the language changes. `npm test` checks that both languages define the same keys and placeholders.
+
 ## Running Locally (without Docker)
 
 ```bash
@@ -56,7 +63,7 @@ Then open http://localhost:3000 in your browser.
 
 ## Online Play
 
-1. Click "Gra online" (Online game)
+1. Click "Challenge online" ("Rzuć wyzwanie online")
 2. Create a room and share the 6-character code with a friend
 3. Or scan the QR code / use the share button
 4. Both players place their ships
