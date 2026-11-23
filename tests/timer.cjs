@@ -15,7 +15,7 @@ function clock() {
 }
 const nodes = new Map();
 const node = id => {
-    if (!nodes.has(id)) nodes.set(id, {style: {}, classList: {add(){}, remove(){}, toggle(){}}, addEventListener(){}, setAttribute(){}});
+    if (!nodes.has(id)) nodes.set(id, {style: {}, dataset: {}, classList: {add(){}, remove(){}, toggle(){}}, addEventListener(){}, setAttribute(){}});
     return nodes.get(id);
 };
 const timers = clock();
@@ -23,6 +23,7 @@ const client = vm.createContext({ ...timers, console, URLSearchParams,
     document: {getElementById: node, querySelectorAll: () => [], addEventListener(){}},
     window: {location: {search: ''}}
 });
+vm.runInContext(fs.readFileSync('i18n.js', 'utf8'), client);
 vm.runInContext(fs.readFileSync('game.js', 'utf8'), client);
 vm.runInContext(`
     playSound = () => {};

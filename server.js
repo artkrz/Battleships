@@ -125,17 +125,17 @@ io.on('connection', (socket) => {
         const room = rooms.get(code);
         
         if (!room) {
-            socket.emit('join-error', { message: 'Pokój nie istnieje' });
+            socket.emit('join-error', { code: 'room-not-found' });
             return;
         }
         
         if (room.players.guest) {
-            socket.emit('join-error', { message: 'Pokój jest pełny' });
+            socket.emit('join-error', { code: 'room-full' });
             return;
         }
         
         if (room.gameStarted) {
-            socket.emit('join-error', { message: 'Gra już się rozpoczęła' });
+            socket.emit('join-error', { code: 'game-started' });
             return;
         }
         
@@ -369,7 +369,7 @@ io.on('connection', (socket) => {
         const room = rooms.get(code);
         
         if (!room) {
-            socket.emit('reconnect-error', { message: 'Pokój nie istnieje' });
+            socket.emit('reconnect-error', { code: 'room-not-found' });
             return;
         }
         
