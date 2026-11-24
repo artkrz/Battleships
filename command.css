@@ -255,3 +255,114 @@ body.large-grid .own-board .grid { --cell-size: min(calc((100vw - 100px) / 15 - 
     .signal-emblem i,.waiting-text::before,.waiting-pill i { animation: signal-pulse 2s ease-in-out infinite; }
     @keyframes signal-pulse { 50% { opacity: .35; box-shadow: 0 0 15px #80d8c677; } }
 }
+
+/* Phone layouts reserve room for the complete board, including coordinates.
+   Keep these overrides isolated so the desktop composition is unchanged. */
+@media (max-width: 759px) {
+    #app { padding: 0 10px max(10px, env(safe-area-inset-bottom)); }
+    .masthead { min-height: 52px; margin-bottom: 10px; gap: 8px; }
+    .sound-toggle, .lang-switch button { min-height: 40px; }
+    .lang-switch button { min-width: 40px; }
+    .screen:not(#start-screen) { gap: 10px; }
+    .screen h2 { font-size: 22px !important; }
+    .btn { min-height: 40px; padding: 10px 12px; }
+    #setup-screen > .eyebrow, #setup-screen > .screen-intro,
+    #game-screen > .eyebrow, #waiting-screen > .eyebrow,
+    #waiting-screen > .screen-intro, #waiting-screen > .signal-emblem { display: none; }
+
+    #setup-screen, #game-screen { --board-count: 10; }
+    body.large-grid #setup-screen, body.large-grid #game-screen { --board-count: 15; }
+    #setup-screen {
+        --cell-size: min(calc((100vw - 76px) / var(--board-count) - 2px), calc((100svh - 354px - env(safe-area-inset-bottom)) / var(--board-count) - 2px), 42px);
+    }
+    .deployment-layout { gap: 10px; min-width: 0; }
+    .ship-selector { padding: 8px; min-width: 0; }
+    .ship-selector .panel-heading { padding-bottom: 6px; }
+    .deployment-progress { margin: 0 0 6px; }
+    .ships-list { gap: 6px; margin-bottom: 6px; padding: 2px 2px 5px; }
+    .ship-btn { flex-basis: 104px; min-height: 60px; padding: 6px; gap: 3px; font-size: 10px; }
+    .ship-btn::before { width: 64px; height: 18px; }
+    .ship-size { font-size: 8px; }
+    .setup-buttons .btn { min-height: 40px; padding: 8px; }
+    .deployment-map { padding: 8px; }
+    .deployment-map > .panel-heading { display: none; }
+    .map-caption { min-height: 24px; padding-top: 5px; margin-top: 7px; }
+    .map-caption > span:last-child { font-size: 14px; }
+    .deployment-actions { position: static; padding: 0; gap: 8px; background: none; }
+    .deployment-actions .btn { font-size: 12px; }
+
+    #game-screen {
+        --cell-size: min(calc((100vw - 76px) / var(--board-count) - 2px), calc((100svh - 346px - env(safe-area-inset-bottom)) / var(--board-count) - 2px), 42px);
+    }
+    #game-screen h2 { font-size: 22px !important; }
+    .battle-feedback { font-size: 11px; line-height: 1.4; min-height: 16px; }
+    .game-info { width: 100%; justify-content: space-evenly; flex-wrap: wrap; padding: 6px 8px; gap: 4px 10px; }
+    .ship-count { font-size: 15px; }
+    .turn-timer { font-size: 16px; padding: 4px 10px; }
+    .boards-container { width: 100%; gap: 8px; }
+    .board-section { padding: 8px; min-width: 0; }
+    .board-heading { padding: 0 0 8px; }
+    .board-legend { flex-wrap: nowrap; gap: 12px; margin-top: 9px; }
+    .own-board { padding: 0 8px; }
+    .own-board[open] { padding-bottom: 8px; }
+    .own-board summary { min-height: 40px; }
+
+    #start-screen.active { min-height: 0; padding: clamp(130px, 28svh, 240px) 16px 0; }
+    .hero-art { height: clamp(220px, 40svh, 330px); }
+    #start-screen h1 { font-size: clamp(42px, 12vw, 58px); margin: 10px 0; }
+    #start-screen p { margin-bottom: 14px; line-height: 1.5; }
+    .mode-buttons .btn { min-height: 60px; padding: 10px; }
+    .hero-footer { margin-top: 14px; padding: 12px 0; }
+
+    #lobby-screen, #waiting-screen { padding-top: 0; }
+    #lobby-screen .signal-emblem { width: 54px; height: 54px; margin: 0; }
+    .lobby-options { padding: 14px; gap: 12px; }
+    .join-room { gap: 8px; }
+    .join-room input { min-height: 48px; }
+    .qr-section { padding: 0 12px; }
+    .qr-section summary { min-height: 40px; }
+    .qr-section img { margin: 0 auto 10px; }
+    .room-code-display { padding: 12px; gap: 10px; }
+    .room-code-display .field-label { font-size: 10px; }
+    .room-code-display .code { font-size: 32px; }
+    .share-buttons { gap: 8px; }
+    .share-buttons .btn, .invite-link .btn { min-height: 40px; padding: 8px; }
+    .invite-link { padding-top: 10px; gap: 8px; }
+    .invite-link-text { padding: 8px; font-size: 11px; }
+    .waiting-text { padding: 4px; }
+
+    #gameover-screen { padding-bottom: 0; gap: 10px; }
+    #gameover-screen .victory-banner { height: 130px; }
+    #game-stats { margin-top: 0; gap: 8px; }
+    .result-card { padding: 12px; min-width: 0; flex-basis: 100%; }
+    .result-metrics { margin-top: 10px; }
+    .result-metrics strong { font-size: 25px; }
+    .result-metrics span { margin-top: 3px; }
+    .accuracy-track { margin-top: 10px; }
+    .series-score { padding: 10px; }
+    .series-score strong { font-size: 30px; margin: 4px 0; }
+    #gameover-screen .gameover-buttons { position: static; padding: 0; margin-top: 0; }
+}
+@media (max-width: 759px) and (max-height: 740px) {
+    /* Reserve the measured phone chrome, including wrapped Polish controls
+       and feedback. Subtract from the whole board before dividing by size. */
+    #setup-screen {
+        --cell-size: min(calc((100vw - 76px) / var(--board-count) - 2px), calc((100svh - 410px - env(safe-area-inset-bottom)) / var(--board-count) - 2px), 42px);
+    }
+    #game-screen {
+        --cell-size: min(calc((100vw - 76px) / var(--board-count) - 2px), calc((100svh - 370px - env(safe-area-inset-bottom)) / var(--board-count) - 2px), 42px);
+    }
+    #start-screen.active { padding-top: 130px; }
+    .hero-art { height: 230px; }
+    #start-screen h1 { font-size: 44px; }
+    #start-screen .hero-footer { margin-top: 10px; padding: 10px 0; }
+    #gameover-screen .victory-banner { height: 80px; }
+    #gameover-screen .battle-complete { margin-top: 0; }
+    #gameover-screen .victory-caption { font-size: 12px; }
+    #options-screen > .eyebrow, #options-screen > .screen-intro,
+    #lobby-screen > .eyebrow, #lobby-screen > .screen-intro { display: none; }
+    .options-container { padding: 14px; gap: 16px; }
+    #waiting-screen { gap: 8px; }
+    #waiting-screen .room-code-display { gap: 7px; padding-top: 10px; padding-bottom: 10px; }
+    #waiting-screen .qr-section img { margin-bottom: 6px; }
+}
