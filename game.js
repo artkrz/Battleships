@@ -194,6 +194,7 @@ function initializeSocket() {
         showScreen('waiting');
         // Generate QR code for easy joining
         generateQRCode(data.roomCode);
+        showInviteLink(data.roomCode);
     });
     
     gameState.socket.on('room-joined', (data) => {
@@ -1168,26 +1169,36 @@ function joinRoom() {
     gameState.socket.emit('join-room', code);
 }
 
-function copyRoomCode() {
-    const code = document.getElementById('room-code').textContent;
-    const btn = document.getElementById('copy-code-btn');
-    
-    // Try modern clipboard API first
+// Button label shown after a successful copy, and the label it returns to.
+const COPY_LABELS = {
+    'copy-code-btn': ['waiting.copied', 'waiting.copy'],
+    'copy-link-btn': ['waiting.linkCopied', 'waiting.copyLink'],
+    'share-btn': ['waiting.linkCopied', 'waiting.share']
+};
+
+function getJoinUrl(code = document.getElementById('room-code').textContent) {
+    return `${window.location.origin}/?join=${code}`;
+}
+
+function copyToClipboard(text, btn) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(code).then(() => {
-            showCopySuccess(btn);
-        }).catch(() => {
-            // Fallback if clipboard API fails
-            fallbackCopy(code, btn);
-        });
+        navigator.clipboard.writeText(text)
+            .then(() => showCopySuccess(btn))
+            .catch(() => fallbackCopy(text, btn));
     } else {
-        // Fallback for older browsers
-        fallbackCopy(code, btn);
+        fallbackCopy(text, btn);
     }
 }
 
+function copyRoomCode() {
+    copyToClipboard(document.getElementById('room-code').textContent, document.getElementById('copy-code-btn'));
+}
+
+function copyInviteLink() {
+    copyToClipboard(getJoinUrl(), document.getElementById('copy-link-btn'));
+}
+
 function fallbackCopy(text, btn) {
-    // Create a temporary input element
     const textArea = document.createElement('textarea');
     textArea.value = text;
     textArea.style.position = 'fixed';
@@ -1196,38 +1207,44 @@ function fallbackCopy(text, btn) {
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    
+
     try {
-        document.execCommand('copy');
+        if (!document.execCommand('copy')) throw new Error('Copy rejected');
         showCopySuccess(btn);
     } catch (err) {
         showCopyError(btn);
     }
-    
+
     document.body.removeChild(textArea);
 }
 
 function showCopySuccess(btn) {
-    setText(btn, btn.id === 'share-btn' ? 'waiting.linkCopied' : 'waiting.copied');
+    const [success, idle] = COPY_LABELS[btn.id];
+    setText(btn, success);
     btn.classList.add('copy-success');
-    setTimeout(() => {
-        setText(btn, btn.id === 'share-btn' ? 'waiting.share' : 'waiting.copy');
+    clearTimeout(btn.copyResetTimer);
+    btn.copyResetTimer = setTimeout(() => {
+        setText(btn, idle);
         btn.classList.remove('copy-success');
     }, 2000);
 }
 
 function showCopyError(btn) {
     setText(btn, 'waiting.copyError');
-    setTimeout(() => {
-        setText(btn, btn.id === 'share-btn' ? 'waiting.share' : 'waiting.copy');
-    }, 2000);
+    // Leave the link selected so it can still be copied by hand.
+    if (btn.id === 'copy-link-btn') window.getSelection().selectAllChildren(document.getElementById('invite-link-text'));
+    clearTimeout(btn.copyResetTimer);
+    btn.copyResetTimer = setTimeout(() => setText(btn, COPY_LABELS[btn.id][1]), 2000);
+}
+
+function showInviteLink(code) {
+    document.getElementById('invite-link-text').textContent = getJoinUrl(code);
 }
 
 function generateQRCode(code) {
     const img = document.getElementById('qr-code');
-    const joinUrl = `${window.location.origin}?join=${code}`;
-    const encodedUrl = encodeURIComponent(joinUrl);
-    
+    const encodedUrl = encodeURIComponent(getJoinUrl(code));
+
     // Use QR code API service
     img.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodedUrl}&bgcolor=ffffff&color=1a1a2e`;
     img.width = 160;
@@ -1236,34 +1253,23 @@ function generateQRCode(code) {
 
 function shareRoom() {
     const code = document.getElementById('room-code').textContent;
-    const joinUrl = `${window.location.origin}?join=${code}`;
+    const joinUrl = getJoinUrl(code);
     const shareData = {
         title: t('share.title'),
         text: t('share.text', { code }),
         url: joinUrl
     };
-    
+
     if (navigator.share) {
         // Use native share (works with AirDrop on iOS, share sheet on Android)
         navigator.share(shareData).catch(err => {
-            // User cancelled or error - fallback to copy
+            // User cancelled or error - fall back to copying the link
             if (err.name !== 'AbortError') {
-                copyRoomCode();
+                copyToClipboard(joinUrl, document.getElementById('share-btn'));
             }
         });
     } else {
-        // Fallback - copy the URL
-        const btn = document.getElementById('share-btn');
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(joinUrl).then(() => {
-                setText(btn, 'waiting.linkCopied');
-                setTimeout(() => {
-                    setText(btn, 'waiting.share');
-                }, 2000);
-            });
-        } else {
-            fallbackCopy(joinUrl, btn);
-        }
+        copyToClipboard(joinUrl, document.getElementById('share-btn'));
     }
 }
 
@@ -1601,6 +1607,7 @@ document.getElementById('join-room-btn').addEventListener('click', joinRoom);
 document.getElementById('back-to-menu').addEventListener('click', () => showScreen('start'));
 document.getElementById('copy-code-btn').addEventListener('click', copyRoomCode);
 document.getElementById('share-btn').addEventListener('click', shareRoom);
+document.getElementById('copy-link-btn').addEventListener('click', copyInviteLink);
 document.getElementById('cancel-room-btn').addEventListener('click', cancelRoom);
 
 // Allow Enter key to join room
